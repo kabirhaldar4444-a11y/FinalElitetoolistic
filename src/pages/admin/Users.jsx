@@ -556,106 +556,120 @@ const Users = ({ user, profile: activeProfile }) => {
                   </div>
                   <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-light)]">
                     <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                    {selectedUser.phone || 'No contact provided'}
+                    {isSuperAdmin ? (selectedUser.phone || 'No contact provided') : 'Hidden for Privacy'}
                   </div>
                   <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-light)]">
                     <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    {selectedUser.address || 'No location provided'}
+                    {isSuperAdmin ? (selectedUser.address || 'No location provided') : 'Hidden for Privacy'}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* ── Documents Section ── */}
-            <div className="pt-10 mb-10 border-t" style={{ borderColor: 'var(--glass-border)' }}>
-              <h3 className="text-2xl font-black mb-6 tracking-tight flex items-center gap-3 text-[color:var(--text-dark)]">
-                <span className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400">
-                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                </span>
-                Documents
-              </h3>
+            {isSuperAdmin ? (
+              <div className="pt-10 mb-10 border-t" style={{ borderColor: 'var(--glass-border)' }}>
+                <h3 className="text-2xl font-black mb-6 tracking-tight flex items-center gap-3 text-[color:var(--text-dark)]">
+                  <span className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </span>
+                  Documents
+                </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {[
-                  { label: 'Aadhar Card (Front)', url: selectedUser.aadhaar_front_url },
-                  { label: 'Aadhar Card (Back)',  url: selectedUser.aadhaar_back_url  },
-                ].map(({ label, url }) => {
-                  const isPdf = url && url.toLowerCase().includes('.pdf');
-                  const fileType = !url ? 'none' : isPdf ? 'PDF Document' : 'Image File';
-                  return (
-                    <div
-                      key={label}
-                      className="flex flex-col gap-4 p-5 rounded-2xl transition-all duration-300"
-                      style={{ backgroundColor: 'var(--input-bg)', border: '1px solid var(--glass-border)' }}
-                    >
-                      {/* Header row */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: url ? 'rgba(99,102,241,0.15)' : 'rgba(0,0,0,0.05)', border: '1px solid var(--glass-border)' }}>
-                          {isPdf ? (
-                            <svg width="22" height="22" fill="none" stroke="#818cf8" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><polyline points="13 3 13 9 19 9" stroke="#818cf8" strokeWidth="2"/></svg>
-                          ) : url ? (
-                            <svg width="22" height="22" fill="none" stroke="#818cf8" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#818cf8"/><circle cx="8.5" cy="8.5" r="1.5" fill="#818cf8" stroke="none"/><polyline points="21 15 16 10 5 21" stroke="#818cf8" strokeWidth="2"/></svg>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {[
+                    { label: 'Aadhar Card (Front)', url: selectedUser.aadhaar_front_url },
+                    { label: 'Aadhar Card (Back)',  url: selectedUser.aadhaar_back_url  },
+                  ].map(({ label, url }) => {
+                    const isPdf = url && url.toLowerCase().includes('.pdf');
+                    const fileType = !url ? 'none' : isPdf ? 'PDF Document' : 'Image File';
+                    return (
+                      <div
+                        key={label}
+                        className="flex flex-col gap-4 p-5 rounded-2xl transition-all duration-300"
+                        style={{ backgroundColor: 'var(--input-bg)', border: '1px solid var(--glass-border)' }}
+                      >
+                        {/* Header row */}
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: url ? 'rgba(99,102,241,0.15)' : 'rgba(0,0,0,0.05)', border: '1px solid var(--glass-border)' }}>
+                            {isPdf ? (
+                              <svg width="22" height="22" fill="none" stroke="#818cf8" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><polyline points="13 3 13 9 19 9" stroke="#818cf8" strokeWidth="2"/></svg>
+                            ) : url ? (
+                              <svg width="22" height="22" fill="none" stroke="#818cf8" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#818cf8"/><circle cx="8.5" cy="8.5" r="1.5" fill="#818cf8" stroke="none"/><polyline points="21 15 16 10 5 21" stroke="#818cf8" strokeWidth="2"/></svg>
+                            ) : (
+                              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" style={{ color: 'var(--text-light)', opacity: 0.4 }}><path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm truncate text-[color:var(--text-dark)]">{label}</p>
+                            <p className="text-xs font-medium" style={{ color: 'var(--text-light)' }}>{fileType}</p>
+                          </div>
+                          {url ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0"
+                              style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>Uploaded</span>
                           ) : (
-                            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" style={{ color: 'var(--text-light)', opacity: 0.4 }}><path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0"
+                              style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>Missing</span>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm truncate text-[color:var(--text-dark)]">{label}</p>
-                          <p className="text-xs font-medium" style={{ color: 'var(--text-light)' }}>{fileType}</p>
-                        </div>
-                        {url ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0"
-                            style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>Uploaded</span>
-                        ) : (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0"
-                            style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>Missing</span>
+
+                        {/* No document empty state */}
+                        {!url && (
+                          <div className="flex flex-col items-center justify-center py-7 rounded-xl border-2 border-dashed gap-2"
+                            style={{ borderColor: 'var(--glass-border)' }}>
+                            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"
+                              style={{ color: 'var(--text-light)', opacity: 0.35 }}>
+                              <path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                            </svg>
+                            <p className="text-sm font-bold" style={{ color: 'var(--text-light)', opacity: 0.45 }}>No document uploaded</p>
+                          </div>
+                        )}
+
+                        {/* Action buttons */}
+                        {url && (
+                          <div className="flex gap-3 mt-1">
+                            <button
+                              id={`doc-view-${label.replace(/\s+/g, '-').toLowerCase()}`}
+                              onClick={() => { setDocViewLabel(label); setDocViewUrl(url); }}
+                              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-95"
+                              style={{ backgroundColor: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}
+                            >
+                              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                              View
+                            </button>
+                            <a
+                              id={`doc-download-${label.replace(/\s+/g, '-').toLowerCase()}`}
+                              href={url}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-95 no-underline"
+                              style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}
+                            >
+                              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                              Download
+                            </a>
+                          </div>
                         )}
                       </div>
-
-                      {/* No document empty state */}
-                      {!url && (
-                        <div className="flex flex-col items-center justify-center py-7 rounded-xl border-2 border-dashed gap-2"
-                          style={{ borderColor: 'var(--glass-border)' }}>
-                          <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"
-                            style={{ color: 'var(--text-light)', opacity: 0.35 }}>
-                            <path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                          </svg>
-                          <p className="text-sm font-bold" style={{ color: 'var(--text-light)', opacity: 0.45 }}>No document uploaded</p>
-                        </div>
-                      )}
-
-                      {/* Action buttons */}
-                      {url && (
-                        <div className="flex gap-3 mt-1">
-                          <button
-                            id={`doc-view-${label.replace(/\s+/g, '-').toLowerCase()}`}
-                            onClick={() => { setDocViewLabel(label); setDocViewUrl(url); }}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-95"
-                            style={{ backgroundColor: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}
-                          >
-                            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                            View
-                          </button>
-                          <a
-                            id={`doc-download-${label.replace(/\s+/g, '-').toLowerCase()}`}
-                            href={url}
-                            download
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-95 no-underline"
-                            style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}
-                          >
-                            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                            Download
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="pt-10 mb-10 border-t" style={{ borderColor: 'var(--glass-border)' }}>
+                <div className="p-6 rounded-2xl flex items-center gap-4 bg-orange-500/10 border border-orange-500/20">
+                  <div className="w-12 h-12 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center shrink-0">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-orange-500 mb-1">Privacy Protected</h3>
+                    <p className="text-sm font-medium text-[color:var(--text-light)]">Personal identity documents are restricted for privacy. Only Master Admins can view this information.</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ── Exam Results ── */}
             <div className="pt-10 border-t" style={{ borderColor: 'var(--glass-border)' }}>

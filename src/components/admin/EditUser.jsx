@@ -35,10 +35,11 @@ const DocumentPreview = ({ title, url }) => {
   );
 };
 
-const EditUser = () => {
+const EditUser = ({ user }) => {
   const toast = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
+  const isSuperAdmin = user?.email === 'info@elitetoolistic.com';
   
   const [editUser, setEditUser] = useState({
     id: '',
@@ -226,20 +227,32 @@ const EditUser = () => {
           </div>
 
           {/* Document Verification Section */}
-          <div className="animate-slide-up animation-delay-100">
-            <h2 className="text-2xl font-black mb-8 tracking-tight flex items-center gap-3 text-[color:var(--text-dark)]">
-              <span className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400">
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"/></svg>
-              </span>
-              Identity Verification
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <DocumentPreview title="Profile Photo" url={editUser.profile_photo_url} />
-               <DocumentPreview title="Aadhaar Front" url={editUser.aadhaar_front_url} />
-               <DocumentPreview title="Aadhaar Back" url={editUser.aadhaar_back_url} />
-               <DocumentPreview title="PAN Card" url={editUser.pan_url} />
+          {isSuperAdmin ? (
+            <div className="animate-slide-up animation-delay-100">
+              <h2 className="text-2xl font-black mb-8 tracking-tight flex items-center gap-3 text-[color:var(--text-dark)]">
+                <span className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-400">
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z"/></svg>
+                </span>
+                Identity Verification
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <DocumentPreview title="Profile Photo" url={editUser.profile_photo_url} />
+                 <DocumentPreview title="Aadhaar Front" url={editUser.aadhaar_front_url} />
+                 <DocumentPreview title="Aadhaar Back" url={editUser.aadhaar_back_url} />
+                 <DocumentPreview title="PAN Card" url={editUser.pan_url} />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="animate-slide-up animation-delay-100 p-6 rounded-2xl flex items-center gap-4 bg-orange-500/10 border border-orange-500/20">
+              <div className="w-12 h-12 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center shrink-0">
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              </div>
+              <div>
+                <h3 className="font-bold text-orange-500 mb-1">Privacy Protected</h3>
+                <p className="text-sm font-medium text-[color:var(--text-light)]">Personal identity documents are restricted for privacy. Only Master Admins can view this information.</p>
+              </div>
+            </div>
+          )}
 
           {/* Exam Allocation Grid */}
           <div className="animate-slide-up animation-delay-200">
