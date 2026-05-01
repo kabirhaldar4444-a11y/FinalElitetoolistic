@@ -42,7 +42,7 @@ const DisclaimerOverlay = ({ user, profile }) => {
 
   const sections = [
     {
-      title: "1. Service Delivery / Platform",
+      title: "1. Service Delivery",
       icon: (
         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
@@ -50,18 +50,74 @@ const DisclaimerOverlay = ({ user, profile }) => {
       ),
       color: "bg-blue-500",
       points: [
-        "One attempt allowed for Pre-Board and Final exams",
-        "Soft copy certificate issued within 15 days after final exam",
-        "No physical certificate (only digital)",
         {
-          subTitle: "Pre-Exam Reward System:",
+          subTitle: "Enrollment Process",
           subPoints: [
-            "80%+ score = eligible for rewards",
-            "5+ gift options (₹50K–₹1L range)",
-            "Delivery in 45–60 days",
-            "Tracking shared via email",
-            "OTP required for delivery",
-            "Company may use student photos for promotion"
+            "Customers visit the Elitetoolistic website and fill out the Enrollment Form.",
+            "After form submission, Our team connects with the customer.",
+            "A detailed email is shared explaining the complete process flow and fee structure. Payments may also be accepted directly through an authorized professional expert trainer account, where applicable."
+          ]
+        },
+        {
+          subTitle: "Process Explanation & Confirmation",
+          subPoints: [
+            "During the call, the team explains the course structure, learning journey, and assessment-to-certification flow.",
+            "The customer then confirms their participation in the program."
+          ]
+        },
+        {
+          subTitle: "Fee Payment",
+          subPoints: [
+            "Upon successful completion of the fee payment, a GST-compliant invoice is issued within 6 hours.",
+            "Pre-examination study materials are shared with the learner within 24 hours."
+          ]
+        },
+        {
+          subTitle: "Pre-Exam",
+          subPoints: [
+            "A Pre-Exam is conducted within 24–48 hours of fee payment.",
+            "This exam assesses the customer’s initial understanding of the selected domain.",
+            "Before the exam, the Guidance Team connects to explain the exam process."
+          ]
+        },
+        {
+          subTitle: "Pre-Exam Result & Pre-Board Professional Certificate",
+          subPoints: [
+            "Results are shared within 24–48 hours via email.",
+            "A Pre-Board Professional Certificate is issued with “Under Training” mentioned."
+          ]
+        },
+        {
+          subTitle: "Reward Eligibility",
+          subPoints: [
+            "Customers scoring above 80% become eligible for a gift.",
+            "One gift can be selected from four available options, which will be delivered accordingly."
+          ]
+        },
+        {
+          subTitle: "Self-Paced Training",
+          subPoints: [
+            "Access to recorded video lectures is shared within 15 days on payment.",
+            "Training duration is 90–120 days."
+          ]
+        },
+        {
+          subTitle: "Final Exam",
+          subPoints: [
+            "A Final Exam is conducted between 90-120 days."
+          ]
+        },
+        {
+          subTitle: "Final Certificate",
+          subPoints: [
+            "Upon successful completion of all requirements, the Final Certificate is issued.",
+            "The certificate will clearly state the status as “Certified.”"
+          ]
+        },
+        {
+          subTitle: "Continuous Support",
+          subPoints: [
+            "Throughout the entire journey, the Elitetoolistic team remains in contact for guidance and support."
           ]
         }
       ]
@@ -75,14 +131,74 @@ const DisclaimerOverlay = ({ user, profile }) => {
       ),
       color: "bg-emerald-500",
       points: [
-        "Data used for enrollment, payments, exams, communication, and improvement",
-        "Data is NOT sold or shared commercially",
-        "Stored securely with encryption and limited access",
-        "Payment data handled securely",
-        "Cookies used for login and analytics",
-        "Data retained only as needed",
-        "Users can access, correct, or delete their data",
-        "Policy updates may occur anytime"
+        {
+          subTitle: "Information We Collect",
+          subPoints: [
+            "Personal Information: Your name, email address, contact number, and country of residence collected during registration or inquiries.",
+            "Payment Information: Transaction details (amount, date, and payment method). We do not store complete payment card or crypto wallet details.",
+            "Course and Usage Data: Information about the courses you enroll in, your progress, assessments, and interactions with our online learning platform.",
+            "Technical Information: Device type, IP address, browser version, and cookies to improve website performance and user experience."
+          ]
+        },
+        {
+          subTitle: "How We Use Your Information",
+          subPoints: [
+            "Process your course enrollment and payments.",
+            "Provide access to study materials, exams, and course completion certificates.",
+            "Communicate important updates, reminders, and support-related information.",
+            "Improve course quality, website functionality, and user experience.",
+            "Maintain compliance with our internal policies and applicable laws.",
+            "We do not sell, trade, or rent your personal information to any third party."
+          ]
+        },
+        {
+          subTitle: "Data Storage and Security",
+          subPoints: [
+            "All personal data is stored securely in encrypted databases.",
+            "Only authorized Elitetoolistic personnel have access to user data.",
+            "We regularly update our systems and employ security measures such as SSL encryption to protect against unauthorized access, alteration, or disclosure."
+          ]
+        },
+        {
+          subTitle: "Payment & Financial Data",
+          subPoints: [
+            "All personal data is stored securely in encrypted databases.",
+            "Only authorized Elitetoolistic personnel have access to user data.",
+            "We regularly update our systems and employ security measures such as SSL encryption to protect against unauthorized access, alteration, or disclosure."
+          ]
+        },
+        {
+          subTitle: "Use of Cookies",
+          subPoints: [
+            "Our website uses cookies to: Enhance your browsing experience, Save login preferences, Analyze site traffic and improve user experience.",
+            "You can choose to disable cookies from your browser settings; however, some website features may not function properly as a result."
+          ]
+        },
+        {
+          subTitle: "Data Retention",
+          subPoints: [
+            "We retain your personal information for as long as necessary to fulfill course delivery and legal obligations. Once no longer needed, your data will be securely deleted or anonymized."
+          ]
+        },
+        {
+          subTitle: "Third-Party Links",
+          subPoints: [
+            "Our website may contain links to third-party websites (e.g., payment gateways or educational partners). Elitetoolistic is not responsible for the privacy practices or content of these external sites."
+          ]
+        },
+        {
+          subTitle: "Your Rights",
+          subPoints: [
+            "You have the right to: Access the information we hold about you, Request correction or deletion of inaccurate data, Withdraw consent for marketing communications at any time.",
+            "To exercise these rights, please contact our support team at support@elitetoolistic.com."
+          ]
+        },
+        {
+          subTitle: "Policy Updates",
+          subPoints: [
+            "Elitetoolistic OPC Pvt Ltd and PayG, reserves the right to update or modify this Privacy Policy at any time without prior notice. The revised version will be posted on our website with an updated effective date."
+          ]
+        }
       ]
     },
     {
@@ -94,10 +210,63 @@ const DisclaimerOverlay = ({ user, profile }) => {
       ),
       color: "bg-amber-500",
       points: [
-        "One attempt allowed for exams",
-        "Certificate issued after final exam",
-        "Refund rules apply (see below)",
-        "Reward system based on performance (80%+)"
+        {
+          subTitle: "Course Duration and Delivery",
+          subPoints: [
+            "The complete course will be delivered within 90 to 120 days from the date of enrollment.",
+            "After enrollment, learners will receive an Invoice, Study Materials and video lectures within 10 working days of making the payment.",
+            "A Pre-Board Exam will be scheduled 24 to 48 hours after payment, accessible via the official Elitetoolistic exam portal. An Initial PC Softcopy (indicating “Under Training” and course details), will be provided after going through the pre-board exam within 48 to 72 hours.",
+            "The final online exam must be attended between 90 to 120 days after enrollment.",
+            "Upon successful exam completion, the Final PC Softcopy will be emailed to the candidate, indicating “Successfully Certified”."
+          ]
+        },
+        {
+          subTitle: "Training Format",
+          subPoints: [
+            "No live training sessions will be provided.",
+            "Study material and training videos will be shared once only via email after the enrollment.",
+            "Training videos and study materials are non-transferable and intended solely for enrolled candidates.",
+            "Upon successful completion of the program, the certificate will be released with an abbreviation format. For an example if the course you have enrolled in 'Resilience Coach Training', then 'RCT' will appear on your certificate, similarly if the course name is Decision Making Mastery Training, on the certificate it will show 'DMMT'"
+          ]
+        },
+        {
+          subTitle: "Exam Policy",
+          subPoints: [
+            "Multiple exam attempts are not permitted, for pre- board as well as final exam.",
+            "The Final PC Softcopy will be issued within 15 days after the final exam attempt.",
+            "No hard copy certificates will be delivered; all documents will be sent in digital format only."
+          ]
+        },
+        {
+          subTitle: "Refund Policy",
+          subPoints: [
+            "No refund will be applicable after attempting any exam (Pre-Board or Final).",
+            "A 90% refund is applicable before attempting any exam.",
+            "There is no 100% refund policy.",
+            "A 10% deduction will apply to all refunds to cover the cost of digital study materials and content access."
+          ]
+        },
+        {
+          subTitle: "Pre-Examination Reward Policy",
+          subPoints: [
+            "Candidates who secure 80% or above in the designated pre-examination will be eligible to receive a complimentary gift.",
+            "Eligible candidates will be provided with 5+ options for gift items worth upto 50k-100k. The final gift selection will be subject to availability and company discretion.",
+            "By qualifying for the reward, candidates consent to the use and display of their photograph on the company’s official website and promotional platforms.",
+            "Gift items will be dispatched within 45 to 60 days from the date of result declaration.",
+            "All gifts will be accompanied by the manufacturer’s warranty, where applicable.",
+            "Courier tracking details will be shared via registered email once the item has been dispatched.",
+            "For delivery verification, a one-time password (OTP) required by the courier partner will be shared with the recipient by the company.",
+            "The company reserves the right to modify, substitute, or discontinue the reward offer at any time without prior notice, in accordance with applicable laws and operational requirements."
+          ]
+        },
+        {
+          subTitle: "General Terms",
+          subPoints: [
+            "All timelines mentioned are approximate and subject to variation depending on course type and customer engagement.",
+            "Study materials and videos are shared once and cannot be reissued.",
+            "By enrolling, candidates agree to comply with the above terms and conditions."
+          ]
+        }
       ]
     },
     {
@@ -109,12 +278,78 @@ const DisclaimerOverlay = ({ user, profile }) => {
       ),
       color: "bg-rose-500",
       points: [
-        "No refund after exam attempt or content access",
-        "Refund allowed only within 24 hours of payment",
-        "90% refund (10% deduction mandatory)",
-        "Processing time: 5–7 working days (+7 days bank time)",
-        "Request must include name, email, course, receipt, and reason",
-        "No 100% refund under any condition"
+        {
+          subTitle: "No Refund After Exam Attempt",
+          subPoints: [
+            "Once a candidate has attempted any exam — whether it is the Pre-Board Exam or the Final Exam — no refund will be applicable under any circumstances.",
+            "This policy ensures the integrity of our course access and examination system, as study materials and evaluations are already utilized at that stage."
+          ]
+        },
+        {
+          subTitle: "90% Refund Before Exam Attempt",
+          subPoints: [
+            "If a candidate wishes to cancel their enrollment before attempting the pre-exam, they are eligible for a 90% refund of the total course fee.",
+            "Refund will be only be provided if the customer raised the request within 24 hours of making the payment and they must not attend the exam otherwise no refund will be initiated to them.",
+            "The refund request must be raised in writing via email to the official Elitetoolistic support team.",
+            "Refund processing time is 5-7 working days once the refund request is approved it may take an additional 7 working days to get credited into the customer's bank account from which payment was made."
+          ]
+        },
+        {
+          subTitle: "No 100% Refund Policy",
+          subPoints: [
+            "Please note that Elitetoolistic does not offer a 100% refund under any condition.",
+            "This is due to administrative, processing, and content access costs incurred upon enrollment."
+          ]
+        },
+        {
+          subTitle: "Refund Request Procedure",
+          subPoints: [
+            "To request a refund, the candidate must email support@elitetoolistic.com with their full name, registered email ID, course name, payment receipt, and reason for cancellation.",
+            "Requests without complete details may face delays in processing."
+          ]
+        },
+        {
+          subTitle: "10% Deduction on All Refunds",
+          subPoints: [
+            "All approved refunds will include a 10% deduction to cover costs associated with digital content delivery, study materials, and platform usage.",
+            "This deduction applies uniformly to all refund cases."
+          ]
+        },
+        {
+          subTitle: "Special Note",
+          subPoints: [
+            "Partial Course Completion: If a candidate has completed only a portion of the course, no refund will be issued for the remaining content.",
+            "Delayed Course Progress: Refunds will not be provided due to delays in completing the course at the candidate’s own pace.",
+            "Accessed Content: Once study materials, training videos, or pre-board assessments have been accessed, refunds will not be applicable.",
+            "Dissatisfaction with Course Content: Refunds cannot be claimed solely based on personal preferences, expectations, or dissatisfaction with the course material."
+          ]
+        },
+        {
+          subTitle: "Agreement to Policies",
+          subPoints: [
+            "By enrolling in any course offered by Elitetoolistic Education, candidates acknowledge and agree to comply with all policies, terms of service, and refund rules.",
+            "Enrolling confirms that the candidate has read, understood, and accepted the terms outlined in the policies, including payment, course access, exam schedules, and refund rules.",
+            "Candidates are responsible for reviewing these policies prior to enrollment, as continued use of the course materials implies acceptance of all terms."
+          ]
+        },
+        {
+          subTitle: "Independent Organization",
+          subPoints: [
+            "Elitetoolistic (OPC) PVT. LTD. is an independent training and service provider. We are not affiliated, associated, authorized, endorsed by, or in any way officially connected with any other institute, organization, or governing body. All rights related to our services, content, and training materials are solely reserved by Elitetoolistic."
+          ]
+        },
+        {
+          subTitle: "No Guarantee of Employment or Monetary Benefit",
+          subPoints: [
+            "Our programs are designed for skill development and professional enhancement only. We do not guarantee any monetary benefit, job placement, promotion, or financial gain as a result of completing our training or certification programs."
+          ]
+        },
+        {
+          subTitle: "Third-Party Recommendations",
+          subPoints: [
+            "Elitetoolistic shall not be held responsible for any financial, personal, or professional loss incurred by customers who enroll in our services based on third-party recommendations, promotions, or representations. Any such engagement is strictly at the discretion and responsibility of the individual."
+          ]
+        }
       ]
     }
   ];

@@ -51,6 +51,9 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
   const [emailValue, setEmailValue] = useState(profile?.email || '');
   const [selectedState, setSelectedState] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [pincodeError, setPincodeError] = useState('');
+  const [isFetchingPincode, setIsFetchingPincode] = useState(false);
   const [address, setAddress] = useState('');
   const [aadhaarFront, setAadhaarFront] = useState(null);
   const [aadhaarBack, setAadhaarBack] = useState(null);
@@ -60,6 +63,9 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
   const [showCamera, setShowCamera] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  const [locationAlert, setLocationAlert] = useState(null);
+  const [userIP, setUserIP] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const videoRef = useRef(null);
@@ -71,6 +77,143 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
   const handleStateChange = (e) => {
     setSelectedState(e.target.value);
     setSelectedCity('');
+  };
+
+  const handlePincodeChange = async (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setPincode(value);
+    setPincodeError('');
+
+    if (value.length === 6) {
+      setIsFetchingPincode(true);
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${value}`);
+        const data = await response.json();
+        
+        if (data[0].Status === "Success") {
+          const postOffice = data[0].PostOffice[0];
+          const state = postOffice.State;
+          const district = postOffice.District;
+          
+          if (STATES.includes(state)) {
+            setSelectedState(state);
+            // Wait for state update is not needed here as we are setting both
+            // But we need to ensure the city is in the list or add it
+            if (INDIA_STATES_CITIES[state] && INDIA_STATES_CITIES[state].includes(district)) {
+              setSelectedCity(district);
+            } else {
+              // If city not in our list, we add it temporarily or just set it
+              setSelectedCity(district);
+            }
+            setLocationAlert({ type: 'success', message: `Found: ${district}, ${state}` });
+          } else {
+            setPincodeError('Location found but state mismatch');
+          }
+        } else {
+          setPincodeError('Invalid PIN Code');
+        }
+      } catch (err) {
+        setPincodeError('Network error while fetching PIN data');
+      } finally {
+        setIsFetchingPincode(false);
+        setTimeout(() => setLocationAlert(null), 3000);
+      }
+    }
+  };
+
+  const detectLocation = () => {
+    setIsFetchingLocation(true);
+    setLocationAlert(null);
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+            const geoData = await res.json();
+            
+            handleLocationData({
+              region: geoData.principalSubdivision,
+              city: geoData.city || geoData.locality,
+              postal: geoData.postcode
+            });
+          } catch (err) {
+            fetchIPLocation('Could not refine coordinates. Using network fallback...');
+          }
+        },
+        (error) => {
+          let msg = "";
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              msg = "Location access denied. Please enable permissions in your browser.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              msg = "Location information is unavailable on this device.";
+              break;
+            case error.TIMEOUT:
+              msg = "Location request timed out. Trying network fallback...";
+              break;
+            default:
+              msg = "An unknown error occurred. Trying network fallback...";
+          }
+          fetchIPLocation(msg);
+        },
+        { timeout: 8000, enableHighAccuracy: true }
+      );
+    } else {
+      fetchIPLocation("Geolocation not supported. Using network fallback...");
+    }
+  };
+
+  const fetchIPLocation = async (initialMsg) => {
+    if (initialMsg) {
+      setLocationAlert({ type: 'info', message: initialMsg });
+    }
+    
+    try {
+      const response = await fetch('https://ipapi.co/json/');
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      
+      // Capture the IP address from the API response
+      if (data.ip) setUserIP(data.ip);
+      
+      handleLocationData({
+        region: data.region,
+        city: data.city,
+        postal: data.postal,
+        ip: data.ip
+      });
+    } catch (err) {
+      setLocationAlert({ 
+        type: 'error', 
+        message: 'Network location failed. Please enter your PIN code manually for auto-fill.' 
+      });
+      setIsFetchingLocation(false);
+      setTimeout(() => setLocationAlert(null), 6000);
+    }
+  };
+
+  const handleLocationData = (data) => {
+    const stateName = data.region;
+    const cityName = data.city;
+    const pin = data.postal;
+    const ip = data.ip;
+
+    if (stateName && STATES.includes(stateName)) {
+      setSelectedState(stateName);
+      setSelectedCity(cityName || '');
+      if (pin) setPincode(pin);
+      
+      const successMsg = `Detected: ${cityName ? cityName + ', ' : ''}${stateName}${ip ? ` (IP: ${ip})` : ''}`;
+      setLocationAlert({ type: 'success', message: successMsg });
+    } else {
+      const fallbackMsg = `Location detected${ip ? ` from IP: ${ip}` : ''} but state mapping failed. Please select manually.`;
+      setLocationAlert({ type: 'error', message: fallbackMsg });
+    }
+    setIsFetchingLocation(false);
+    setTimeout(() => setLocationAlert(null), 5000);
   };
 
   const compressImage = async (file) => {
@@ -145,37 +288,196 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
 
   const sendEmailNotification = async (candidateData) => {
     try {
-      // Using Web3Forms for a zero-backend, zero-database change notification
-      // You can get a free access key at https://web3forms.com/
+      const userName = profile?.full_name || 'New Candidate';
+      
       await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          access_key: "33b16dfe-bac0-40f9-8137-1c00c3b758f8",
-          subject: `NEW REGISTRATION: ${profile.full_name}`,
+          access_key: "71d5ef87-88ee-4b57-9315-1340e1a9350e",
+          subject: `NEW KYC Form : ${userName}`,
           from_name: "Elitetoolistic Portal",
-          recipient: "kabirhaldar4444@gmail.com",
+          recipient: "support@elitetoolistic.com",
           message: `
-            A new candidate has completed their profile:
-            - Name: ${profile?.full_name || 'New Candidate'}
-            - Email: ${emailValue || user?.email || 'N/A'}
-            - Phone: ${candidateData.phone}
-            - Location: ${candidateData.location}
-            
-            UPLOADED DOCUMENTS:
-            - Profile Photo: ${candidateData.photoUrl}
-            - Aadhaar (Front): ${candidateData.frontUrl}
-            - Aadhaar (Back): ${candidateData.backUrl}
-            - PAN Card: ${candidateData.panUrl}
-            - Signature: ${candidateData.signUrl}
-            
-            Documents are also mirrored in the Admin Dashboard.
+A new candidate has completed their profile and accepted all legal terms.
+
+CANDIDATE DETAILS:
+- Name: ${userName}
+- Email: ${emailValue || user?.email || 'N/A'}
+- Residential Address: ${candidateData.address}
+- IP Address: ${userIP || 'Detected via session'}
+
+UPLOADED DOCUMENTS:
+- Profile Photo: ${candidateData.photoUrl}
+- Aadhaar (Front): ${candidateData.frontUrl}
+- Aadhaar (Back): ${candidateData.backUrl}
+- PAN Card: ${candidateData.panUrl}
+- Signature: ${candidateData.signUrl}
+
+--------------------------------------------------
+LEGAL ACKNOWLEDGEMENT ACCEPTED BY ${userName.toUpperCase()}:
+--------------------------------------------------
+
+1. Identity Verification and Authentication
+To ensure the integrity of the examination process and to prevent proxy attendance, the Candidate hereby authorizes the Portal to capture a live photograph (selfie) at the commencement of and/or during the examination. This image will be used solely to authenticate the Candidate’s identity against registered records. Failure to provide a clear image or any attempt to bypass this authentication may result in immediate disqualification.
+
+2. Purpose of Certification and Employment Disclaimer
+The Candidate acknowledges and agrees that this certification is intended solely for personal and professional growth.
+- No Guarantee of Employment: Successful completion of the exam and issuance of a certificate does not guarantee a job offer, placement, or any form of employment.
+- No Guarantee of Financial Increase: This certification does not entitle the Candidate to a salary hike, promotion, or bonus from any current or future employer.
+The Portal and its affiliates are not liable for any career expectations not met following the attainment of this certification.
+
+3. Academic Integrity
+The Candidate agrees to complete the examination independently without the use of unauthorized materials, AI tools, or external assistance. Any detected malpractice will lead to the permanent banning of the Candidate’s profile and the nullification of any previous results.
+
+4. Limitation of Liability
+The Portal shall not be held responsible for technical failures on the Candidate’s end, including but not limited to internet connectivity issues, hardware malfunctions, or power outages during the examination session.
+
+--------------------------------------------------
+ELITETOOLISTIC PLATFORM POLICIES ACCEPTED:
+--------------------------------------------------
+
+SERVICE DELIVERY
+Enrollment Process
+Customers visit the Elitetoolistic website and fill out the Enrollment Form.
+After form submission, Our team connects with the customer.
+A detailed email is shared explaining the complete process flow and fee structure. Payments may also be accepted directly through an authorized professional expert trainer account, where applicable.
+
+Process Explanation & Confirmation
+During the call, the team explains the course structure, learning journey, and assessment-to-certification flow.
+The customer then confirms their participation in the program.
+
+Fee Payment
+Upon successful completion of the fee payment, a GST-compliant invoice is issued within 6 hours.
+Pre-examination study materials are shared with the learner within 24 hours.
+
+Pre-Exam
+A Pre-Exam is conducted within 24–48 hours of fee payment.
+This exam assesses the customer’s initial understanding of the selected domain.
+Before the exam, the Guidance Team connects to explain the exam process.
+
+Pre-Exam Result & Pre-Board Professional Certificate
+Results are shared within 24–48 hours via email.
+A Pre-Board Professional Certificate is issued with “Under Training” mentioned.
+
+Reward Eligibility
+Customers scoring above 80% become eligible for a gift.
+One gift can be selected from four available options, which will be delivered accordingly.
+
+Self-Paced Training
+Access to recorded video lectures is shared within 15 days on payment.
+Training duration is 90–120 days.
+
+Final Exam
+A Final Exam is conducted between 90-120 days.
+
+Final Certificate
+Upon successful completion of all requirements, the Final Certificate is issued.
+The certificate will clearly state the status as “Certified.”
+
+Continuous Support
+Throughout the entire journey, the Elitetoolistic team remains in contact for guidance and support.
+
+PRIVACY POLICY
+Information We Collect
+We collect the following types of information to ensure smooth operation of our services:
+- Personal Information: Your name, email address, contact number, and country of residence collected during registration or inquiries.
+- Payment Information: Transaction details (amount, date, and payment method). We do not store complete payment card or crypto wallet details.
+- Course and Usage Data: Information about the courses you enroll in, your progress, assessments, and interactions with our online learning platform.
+- Technical Information: Device type, IP address, browser version, and cookies to improve website performance and user experience.
+
+How We Use Your Information
+- Process your course enrollment and payments.
+- Provide access to study materials, exams, and course completion certificates.
+- Communicate important updates, reminders, and support-related information.
+- Improve course quality, website functionality, and user experience.
+- Maintain compliance with our internal policies and applicable laws.
+- We do not sell, trade, or rent your personal information to any third party.
+
+Data Storage and Security
+- All personal data is stored securely in encrypted databases.
+- Only authorized Elitetoolistic personnel have access to user data.
+- We regularly update our systems and employ security measures such as SSL encryption to protect against unauthorized access, alteration, or disclosure.
+
+Use of Cookies
+- Our website uses cookies to: Enhance your browsing experience, Save login preferences, Analyze site traffic and improve user experience.
+- You can choose to disable cookies from your browser settings; however, some website features may not function properly as a result.
+
+Data Retention
+- We retain your personal information for as long as necessary to fulfill course delivery and legal obligations. Once no longer needed, your data will be securely deleted or anonymized.
+
+Third-Party Links
+- Our website may contain links to third-party websites. Elitetoolistic is not responsible for the privacy practices or content of these external sites.
+
+Your Rights
+- Access the information we hold about you.
+- Request correction or deletion of inaccurate data.
+- Withdraw consent for marketing communications at any time.
+- To exercise these rights, please contact our support team at support@elitetoolistic.com.
+
+Policy Updates
+- Elitetoolistic OPC Pvt Ltd and PayG, reserves the right to update or modify this Privacy Policy at any time without prior notice.
+
+TERMS & CONDITIONS 
+Course Duration and Delivery
+- The complete course will be delivered within 90 to 120 days from the date of enrollment.
+- After enrollment, learners will receive an Invoice, Study Materials and video lectures within 10 working days of making the payment.
+- A Pre-Board Exam will be scheduled 24 to 48 hours after payment.
+- The final online exam must be attended between 90 to 120 days after enrollment.
+- Upon successful exam completion, the Final PC Softcopy will be emailed.
+
+Training Format
+- No live training sessions will be provided.
+- Study material and training videos will be shared once only via email.
+- Training videos and study materials are non-transferable.
+- Upon successful completion, the certificate will be released with an abbreviation format (e.g., "RCT" for Resilience Coach Training).
+
+Exam Policy
+- Multiple exam attempts are not permitted.
+- The Final PC Softcopy will be issued within 15 days after the final exam attempt.
+- No hard copy certificates will be delivered.
+
+Refund Policy
+- No refund will be applicable after attempting any exam.
+- A 90% refund is applicable before attempting any exam.
+- There is no 100% refund policy.
+- A 10% deduction will apply to all refunds.
+
+Pre-Examination Reward Policy
+- Candidates scoring 80% or above in the pre-exam will be eligible for a gift.
+- Candidates provide consent for photo use on official platforms.
+- Gift items will be dispatched within 45 to 60 days.
+
+General Terms
+- All timelines mentioned are approximate.
+- By enrolling, candidates agree to comply with all terms and conditions.
+
+REFUND POLICY (DETAILED)
+- No Refund After Exam Attempt: Once a candidate has attempted any exam, no refund will be applicable.
+- 90% Refund Before Exam Attempt: Eligible if request raised within 24 hours of payment and before attending the exam.
+- Refund Request: Email support@elitetoolistic.com with full details.
+- Deduction: A 10% deduction applies to all refunds.
+- Special Note: Refunds are not applicable for dissatisfaction, delays, or partially completed courses.
+
+Agreement to Policies:
+By enrolling, candidates acknowledge and agree to comply with all Elitetoolistic policies.
+
+Independent Organization:
+Elitetoolistic (OPC) PVT. LTD. is an independent training and service provider.
+
+No Guarantee of Employment:
+We do not guarantee any monetary benefit, job placement, or promotion.
+
+Third-Party Recommendations:
+Elitetoolistic shall not be held responsible for losses incurred via third-party representations.
+
+CONFIRMATION:
+"${userName}" HAS ACCEPTED ALL THE ABOVE TERMS AND POLICIES VERBATIM.
           `
         })
       });
     } catch (err) {
       console.error('Email Notification Error:', err);
-      // We don't throw here to avoid blocking the user flow if the email fails
     }
   };
 
@@ -191,6 +493,7 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
     
     const digits = phone.replace(/\D/g, '');
     if (!digits.startsWith('91') || digits.length !== 12) return setError('Please enter a valid 10-digit Indian mobile number.');
+    if (!pincode || pincode.length !== 6) return setError('Please enter a valid 6-digit PIN code.');
     if (!selectedState) return setError('Please select your state.');
     if (!selectedCity) return setError('Please select your city.');
 
@@ -219,7 +522,7 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
 
       setUploadStatus('Initializing your dashboard...');
 
-      const fullAddress = `${address ? address + ', ' : ''}${selectedCity}, ${selectedState}`;
+      const fullAddress = `${address ? address + ', ' : ''}${selectedCity}, ${selectedState} - ${pincode}`;
 
       const { error } = await supabase.from('profiles').update({
         phone,
@@ -238,7 +541,7 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
       await sendEmailNotification({
         phone,
         email: emailValue,
-        location: `${selectedCity}, ${selectedState}`,
+        address: fullAddress,
         photoUrl,
         frontUrl,
         backUrl,
@@ -305,10 +608,43 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
 
         <form onSubmit={handleSubmit} className="space-y-12">
           <div className="space-y-8">
-            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary-600 flex items-center gap-3">
-              <span className="w-1.5 h-5 bg-primary-600 rounded-full"></span>
-              Personal Credentials
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary-600 flex items-center gap-3">
+                <span className="w-1.5 h-5 bg-primary-600 rounded-full"></span>
+                Personal Credentials
+              </h4>
+              <button 
+                type="button" 
+                onClick={detectLocation}
+                disabled={isFetchingLocation}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-emerald-500 hover:text-white hover:shadow-lg hover:shadow-emerald-200 disabled:opacity-50"
+              >
+                {isFetchingLocation ? (
+                  <div className="w-3 h-3 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                )}
+                {isFetchingLocation ? 'Detecting...' : 'Detect Location'}
+              </button>
+            </div>
+
+            {locationAlert && (
+              <div className={`p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border animate-fade-in flex items-center gap-3 shadow-sm ${
+                locationAlert.type === 'success' 
+                  ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
+                  : locationAlert.type === 'info'
+                  ? 'bg-blue-50 border-blue-100 text-blue-600'
+                  : 'bg-rose-50 border-rose-100 text-rose-600'
+              }`}>
+                <div className={`w-2 h-2 rounded-full animate-pulse ${
+                  locationAlert.type === 'success' ? 'bg-emerald-500' : locationAlert.type === 'info' ? 'bg-blue-500' : 'bg-rose-500'
+                }`} />
+                {locationAlert.message}
+              </div>
+            )}
             
             <div className="flex flex-col items-center gap-6 p-8 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 group transition-all hover:border-primary-300">
               <div className="text-center">
@@ -376,25 +712,27 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">PIN Code *</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="6-digit PIN"
+                    value={pincode}
+                    onChange={handlePincodeChange}
+                    style={inputStyle}
+                    maxLength={6}
+                    required
+                  />
+                  {isFetchingPincode && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+                {pincodeError && <p className="text-[10px] text-rose-500 font-black uppercase ml-1">{pincodeError}</p>}
+              </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">State / UT *</label>
-                <select value={selectedState} onChange={handleStateChange} style={selectStyle} required>
-                  <option value="">Select State</option>
-                  {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">City / District *</label>
-                <select value={selectedCity} onChange={e => setSelectedCity(e.target.value)} style={selectStyle} required disabled={!selectedState}>
-                  <option value="">{selectedState ? 'Choose City' : 'Pending State Selection...'}</option>
-                  {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Residential Address</label>
                 <input
@@ -404,6 +742,27 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
                   onChange={e => setAddress(e.target.value)}
                   style={inputStyle}
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">State / UT *</label>
+                <select value={selectedState} onChange={handleStateChange} style={selectStyle} required>
+                  <option value="">Select State</option>
+                  {STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">City / District *</label>
+                <select value={selectedCity} onChange={e => setSelectedCity(e.target.value)} style={selectStyle} required disabled={!selectedState}>
+                  <option value="">{selectedState ? 'Choose City' : 'Pending State Selection...'}</option>
+                  {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+                  {selectedCity && !availableCities.includes(selectedCity) && (
+                    <option value={selectedCity}>{selectedCity}</option>
+                  )}
+                </select>
               </div>
             </div>
           </div>
