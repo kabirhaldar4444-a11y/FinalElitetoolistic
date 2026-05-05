@@ -16,6 +16,8 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
   const [timeExpired, setTimeExpired] = useState(false);
   const [hasAcceptedDeclaration, setHasAcceptedDeclaration] = useState(false);
   const [acceptedCheckbox, setAcceptedCheckbox] = useState(false);
+  const [visitedIndices, setVisitedIndices] = useState(new Set([0]));
+  const [reviewedIndices, setReviewedIndices] = useState(new Set());
 
   const answersRef = React.useRef(answers);
   useEffect(() => {
@@ -125,6 +127,22 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
 
   const handleOptionSelect = (optionIdx) => {
     setAnswers({ ...answers, [currentQuestionIndex]: optionIdx });
+    // If it was reviewed, maybe keep it reviewed? Usually answering removes from "not answered" but "reviewed" is a separate flag.
+  };
+
+  const toggleReview = () => {
+    const newReviewed = new Set(reviewedIndices);
+    if (newReviewed.has(currentQuestionIndex)) {
+      newReviewed.delete(currentQuestionIndex);
+    } else {
+      newReviewed.add(currentQuestionIndex);
+    }
+    setReviewedIndices(newReviewed);
+  };
+
+  const jumpToQuestion = (idx) => {
+    setCurrentQuestionIndex(idx);
+    setVisitedIndices(prev => new Set([...prev, idx]));
   };
 
   const handleSubmitWithAnswers = async (currentAnswers) => {
@@ -196,6 +214,15 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
           {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-slate-100 pb-10">
             <div className="flex items-center gap-6">
+              <button 
+                onClick={onFinish}
+                className="group flex items-center gap-2 text-slate-400 hover:text-primary-600 transition-colors font-bold text-sm"
+              >
+                <svg className="transform group-hover:-translate-x-1 transition-transform" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Dashboard
+              </button>
               <div className="w-16 h-16 rounded-[1.5rem] bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-sm border border-primary-100">
                 <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11.35 3.35a1 1 0 011.3 0l6.75 6.75a1 1 0 010 1.41l-6.75 6.75a1 1 0 01-1.3 0l-6.75-6.75a1 1 0 010-1.41l6.75-6.75z" />
@@ -210,11 +237,11 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
             <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
               <div className="px-5 py-2 text-center border-r border-slate-200">
                 <p className="text-[10px] font-black uppercase text-slate-400 mb-0.5">Duration</p>
-                <p className="text-sm font-black text-slate-900">120 Minutes</p>
+                <p className="text-sm font-black text-slate-900">{exam.duration || 0} Minutes</p>
               </div>
               <div className="px-5 py-2 text-center">
                 <p className="text-[10px] font-black uppercase text-slate-400 mb-0.5">Total Load</p>
-                <p className="text-sm font-black text-slate-900">40 Questions</p>
+                <p className="text-sm font-black text-slate-900">{questions.length} Questions</p>
               </div>
             </div>
           </div>
@@ -229,7 +256,7 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
               <div className="space-y-4 text-slate-600 font-medium">
                 {[
                   "Ensure a stable internet connection for the entire duration.",
-                  "System will automatically submit if the 2-hour timer runs out.",
+                  `System will automatically submit if the ${exam.duration || 0}-minute timer runs out.`,
                   "Unauthorized tab switching or browser minimized is strictly logged.",
                   "Do not refresh the page once the exam has started."
                 ].map((text, i) => (
@@ -433,7 +460,14 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
       {/* Immersive HUD Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 p-6 glass-card-saas border-l-4 border-l-primary-500 sticky top-4 z-50 shadow-xl shadow-primary-500/5">
         <div className="flex flex-col">
-          <span className="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-light)] mb-1">Current Exam</span>
+          <div className="flex items-center gap-2 mb-1">
+            <button onClick={onFinish} className="text-slate-400 hover:text-primary-500 transition-colors flex items-center gap-1 group">
+              <svg className="group-hover:-translate-x-1 transition-transform" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+              <span className="text-[10px] font-black uppercase tracking-widest">Back</span>
+            </button>
+            <span className="text-slate-300">|</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-light)]">Current Exam</span>
+          </div>
           <h2 className="text-2xl font-black tracking-tight text-[color:var(--text-dark)] line-clamp-1">{exam.title}</h2>
         </div>
         
@@ -445,183 +479,216 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
               {formatTime(timeLeft)}
             </div>
           </div>
+          <button 
+            onClick={handleSubmit}
+            className="hidden md:flex px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 uppercase tracking-wider"
+          >
+            Submit Exam
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+          </button>
         </div>
       </div>
 
-      <div className="w-full relative">
-        {/* Main Examination Area (Full Width) */}
-        <div className="glass-card-saas p-8 md:p-10 flex flex-col min-h-[60vh] relative overflow-hidden transition-all duration-300">
-          {/* Progress Indicator & Drawer Toggle */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-6 border-b gap-4" style={{ borderColor: 'var(--glass-border)' }}>
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="p-3 rounded-xl bg-primary-500/10 text-primary-500 hover:bg-primary-500 hover:text-white transition-all shadow-lg active:scale-95 flex items-center gap-2"
-                title="Open Question Map"
-              >
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" /></svg>
-                <span className="font-bold text-sm hidden sm:block tracking-wide">Question Map</span>
-              </button>
-              
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Left Side: Question Area */}
+        <div className="flex-1 w-full">
+          <div className="glass-card-saas p-8 md:p-10 flex flex-col min-h-[60vh] relative overflow-hidden transition-all duration-300">
+            {/* Progress Indicator */}
+            <div className="flex items-center justify-between mb-8 pb-6 border-b gap-4" style={{ borderColor: 'var(--glass-border)' }}>
               <span className="text-sm font-bold text-[color:var(--text-light)] flex items-center gap-2">
                 Question 
-                <span className="w-8 h-8 rounded-lg bg-primary-500/10 text-primary-500 flex items-center justify-center font-black">
+                <span className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-lg">
                   {currentQuestionIndex + 1}
                 </span>
-                of {questions.length}
+                <span className="opacity-40">/</span>
+                <span className="opacity-60">{questions.length}</span>
               </span>
+              
+              <div className="flex-1 max-w-[300px] h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary-500 transition-all duration-500 ease-out" 
+                  style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                ></div>
+              </div>
             </div>
             
-            <div className="w-full sm:w-48 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary-500 transition-all duration-500 ease-out" 
-                style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-              ></div>
+            <div className="flex-1 animate-slide-up" key={currentQuestionIndex}>
+              <div className="flex gap-4 items-start mb-8">
+                <span className="text-3xl font-black text-slate-300 shrink-0 mt-1">|</span>
+                <h3 className="text-2xl md:text-3xl font-bold leading-snug text-[color:var(--text-dark)] break-words">
+                  {currentQuestion.question_text}
+                </h3>
+              </div>
+              
+              <div className="grid gap-4 ml-6">
+                {currentQuestion.options.map((option, idx) => {
+                  const isSelected = answers[currentQuestionIndex] === idx;
+                  const letter = String.fromCharCode(65 + idx);
+                  return (
+                    <label 
+                      key={idx} 
+                      className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex items-center gap-6 group ${
+                        isSelected 
+                          ? 'border-primary-500 bg-primary-500/5 shadow-lg shadow-primary-500/10' 
+                          : 'hover:border-primary-500/50 hover:bg-white/5 border-transparent bg-[color:var(--input-bg)]'
+                      }`}
+                    >
+                      <input 
+                        type="radio" 
+                        name="option" 
+                        value={idx} 
+                        checked={isSelected}
+                        onChange={() => handleOptionSelect(idx)}
+                        className="sr-only"
+                      />
+                      <div className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all font-black text-sm ${
+                        isSelected ? 'border-primary-500 bg-primary-500 text-white shadow-lg shadow-primary-500/30' : 'border-slate-200 text-slate-400 group-hover:border-primary-400 bg-white'
+                      }`}>
+                        {letter}
+                      </div>
+                      <span className={`text-lg font-medium transition-colors break-words ${isSelected ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-[color:var(--text-dark)]'}`}>
+                        {option}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          
-          <div className="flex-1 animate-slide-up" key={currentQuestionIndex}>
-            <h3 className="text-2xl md:text-3xl font-bold leading-snug mb-10 text-[color:var(--text-dark)] break-words">
-              {currentQuestion.question_text}
-            </h3>
-            
-            <div className="grid gap-4">
-              {currentQuestion.options.map((option, idx) => {
-                const isSelected = answers[currentQuestionIndex] === idx;
-                return (
-                  <label 
-                    key={idx} 
-                    className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex items-center gap-4 group ${
-                      isSelected 
-                        ? 'border-primary-500 bg-primary-500/5 shadow-lg shadow-primary-500/10' 
-                        : 'hover:border-primary-500/50 hover:bg-white/5 border-transparent bg-[color:var(--input-bg)]'
-                    }`}
+
+            <div className="mt-12 pt-8 border-t flex flex-col sm:flex-row justify-between items-center gap-6" style={{ borderColor: 'var(--glass-border)' }}>
+              <button 
+                onClick={toggleReview}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${reviewedIndices.has(currentQuestionIndex) ? 'bg-purple-500 text-white' : 'text-slate-400 hover:bg-slate-100'}`}
+              >
+                <svg width="20" height="20" fill={reviewedIndices.has(currentQuestionIndex) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" /></svg>
+                {reviewedIndices.has(currentQuestionIndex) ? 'REVIEWED' : 'REVIEW'}
+              </button>
+
+              <div className="flex gap-4 w-full sm:w-auto">
+                {currentQuestionIndex > 0 && (
+                  <button 
+                    onClick={() => jumpToQuestion(currentQuestionIndex - 1)}
+                    className="px-8 py-4 rounded-xl font-bold transition-all flex items-center gap-2 hover:bg-white/10 dark:hover:bg-black/20 w-full sm:w-auto justify-center"
+                    style={{ color: 'var(--text-light)' }}
                   >
-                    <input 
-                      type="radio" 
-                      name="option" 
-                      value={idx} 
-                      checked={isSelected}
-                      onChange={() => handleOptionSelect(idx)}
-                      className="sr-only"
-                    />
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                      isSelected ? 'border-primary-500 bg-primary-500' : 'border-slate-400 group-hover:border-primary-400'
-                    }`}>
-                      {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
-                    </div>
-                    <span className={`text-lg font-medium transition-colors break-words ${isSelected ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-[color:var(--text-dark)]'}`}>
-                      {option}
-                    </span>
-                  </label>
-                );
-              })}
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                    Previous
+                  </button>
+                )}
+
+                {currentQuestionIndex === questions.length - 1 ? (
+                  <button 
+                    onClick={handleSubmit}
+                    className="px-10 py-4 font-black tracking-wide flex items-center gap-2 rounded-2xl w-full sm:w-auto justify-center transition-all duration-300 hover:scale-[1.03] active:scale-95 bg-emerald-500 text-white shadow-xl shadow-emerald-500/30"
+                  >
+                    SUBMIT EXAM
+                    <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => jumpToQuestion(currentQuestionIndex + 1)} 
+                    className="px-10 py-4 font-black tracking-wide flex items-center gap-2 rounded-2xl w-full sm:w-auto justify-center transition-all duration-300 hover:scale-[1.03] active:scale-95 bg-slate-900 text-white shadow-xl shadow-slate-900/20"
+                  >
+                    NEXT
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-
-          <div className="mt-12 pt-6 border-t flex flex-col sm:flex-row justify-between items-center gap-4" style={{ borderColor: 'var(--glass-border)' }}>
-            {/* Previous Button */}
-            <button 
-              disabled={currentQuestionIndex === 0}
-              onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
-              className="px-8 py-4 rounded-xl font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2 hover:bg-white/10 dark:hover:bg-black/20 w-full sm:w-auto justify-center"
-              style={{ color: 'var(--text-light)' }}
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-              Previous
-            </button>
-
-            {/* Save & Next OR Submit Exam (last question) */}
-            {currentQuestionIndex === questions.length - 1 ? (
-              <button 
-                onClick={handleSubmit}
-                className="px-10 py-4 font-black tracking-wide flex items-center gap-2 rounded-2xl w-full sm:w-auto justify-center transition-all duration-300 hover:scale-[1.03] active:scale-95 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50"
-              >
-                <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                Submit Exam
-              </button>
-            ) : (
-              <button 
-                onClick={() => setCurrentQuestionIndex(prev => prev + 1)} 
-                className="btn-premium px-10 py-4 font-black tracking-wide flex items-center gap-2 hover:scale-[1.02] shadow-xl shadow-primary-500/20 w-full sm:w-auto justify-center"
-              >
-                Save & Next
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Hidden Sidebar Drawer (Overlay) */}
-        {/* Backdrop overlay */}
-        <div 
-          className={`fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
-
-        {/* Sliding Drawer Container */}
-        <div 
-          className={`fixed top-0 right-0 h-screen w-full max-w-[350px] z-[9999] glass-card-saas !rounded-none !border-y-0 !border-r-0 border-l p-6 shadow-2xl flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}
-          style={{ borderColor: 'var(--glass-border)', backgroundColor: 'var(--card-bg)' }}
-        >
-          <div className="flex items-center justify-between mb-8 pb-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-            <h4 className="text-xl font-black tracking-widest uppercase flex items-center gap-3 text-[color:var(--text-dark)]">
-              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-              Question Map
-            </h4>
-            <button 
-              onClick={() => setIsSidebarOpen(false)}
-              className="w-10 h-10 rounded-full hover:bg-rose-500/15 hover:text-rose-500 text-slate-400 transition-all flex items-center justify-center shrink-0"
-            >
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-            <div className="grid grid-cols-5 gap-2">
+        {/* Right Side: Question Map Sidebar */}
+        <div className="w-full lg:w-[350px] shrink-0 animate-slide-up" style={{ animationDelay: '100ms' }}>
+          <div className="glass-card-saas p-6 flex flex-col h-full lg:min-h-[60vh]">
+            <div className="flex items-center gap-3 mb-8 pb-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+              <h4 className="text-sm font-black tracking-[0.2em] uppercase text-[color:var(--text-dark)]">Map</h4>
+            </div>
+            
+            <div className="grid grid-cols-5 gap-2 mb-10 overflow-y-auto max-h-[550px] pr-2 custom-scrollbar">
               {questions.map((_, idx) => {
                 const isCurrent = currentQuestionIndex === idx;
                 const isAnswered = answers[idx] !== undefined;
-                
-                let stylingClass = "text-[color:var(--text-dark)] bg-black/5 dark:bg-white/5 border-transparent hover:bg-primary-500/20";
-                
-                if (isCurrent) {
-                  stylingClass = "bg-primary-500 text-white shadow-lg shadow-primary-500/40 ring-2 ring-primary-500/20 ring-offset-1 ring-offset-[color:var(--card-bg)] scale-110 z-10";
-                } else if (isAnswered) {
-                  stylingClass = "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30 font-bold";
-                }
+                const isVisited = visitedIndices.has(idx);
+                const isReviewed = reviewedIndices.has(idx);
+
+                let status = 'not-visited';
+                if (isReviewed) status = 'reviewed';
+                else if (isAnswered) status = 'answered';
+                else if (isVisited) status = 'not-answered';
+
+                // Shapes implementation
+                const renderShape = () => {
+                  const baseClasses = "w-10 h-10 flex items-center justify-center font-bold text-sm transition-all duration-300 cursor-pointer relative";
+                  const activeRing = isCurrent ? "ring-2 ring-slate-900 ring-offset-2 scale-110 z-10 shadow-lg" : "";
+                  
+                  if (status === 'reviewed') {
+                    return (
+                      <div className={`${baseClasses} ${activeRing} bg-purple-500 text-white rounded-full shape-circle`}>
+                        {idx + 1}
+                      </div>
+                    );
+                  }
+                  if (status === 'answered') {
+                    return (
+                      <div className={`${baseClasses} ${activeRing} bg-emerald-500 text-white shape-pentagon`}>
+                        {idx + 1}
+                      </div>
+                    );
+                  }
+                  if (status === 'not-answered') {
+                    return (
+                      <div className={`${baseClasses} ${activeRing} bg-orange-500 text-white shape-hexagon`}>
+                        {idx + 1}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className={`${baseClasses} ${activeRing} border-2 border-slate-200 text-slate-400 bg-white hover:border-slate-300 shape-square`}>
+                      {idx + 1}
+                    </div>
+                  );
+                };
 
                 return (
-                  <button 
-                    key={idx}
-                    onClick={() => {
-                      setCurrentQuestionIndex(idx);
-                      setIsSidebarOpen(false); // Optionally close on select, but keeping it open might be better if they want to jump around quickly. Let's not close it automatically for better UX unless requested, wait, they said "On click -> sidebar should slide in smoothly...". If they want to jump questions rapidly, let's keep it open or just close it to view the question.
-                    }}
-                    className={`aspect-square w-full rounded-xl flex items-center justify-center font-bold text-sm transition-all duration-300 border ${stylingClass}`}
-                    title={`Question ${idx + 1}`}
-                  >
-                    {idx + 1}
-                  </button>
+                  <div key={idx} onClick={() => jumpToQuestion(idx)} className="flex justify-center">
+                    {renderShape()}
+                  </div>
                 );
               })}
             </div>
-          </div>
 
-          <div className="mt-6 pt-6 border-t flex flex-col gap-3 shrink-0" style={{ borderColor: 'var(--glass-border)' }}>
-            <div className="flex items-center justify-between text-xs font-bold text-[color:var(--text-light)]">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/30"></span>
-                Answered
+            {/* Legend */}
+            <div className="mt-auto pt-6 border-t space-y-4" style={{ borderColor: 'var(--glass-border)' }}>
+              <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-slate-200 shape-square"></div>
+                  <span className="text-slate-400">Not Visited</span>
+                </div>
+                <span className="text-slate-900">{questions.length - visitedIndices.size}</span>
               </div>
-              <span>{Math.max(0, Object.keys(answers).length)}</span>
-            </div>
-            <div className="flex items-center justify-between text-xs font-bold text-[color:var(--text-light)]">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded bg-black/10 dark:bg-white/10"></span>
-                Unanswered
+              <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 bg-orange-500 shape-hexagon"></div>
+                  <span className="text-slate-400">Not Answered</span>
+                </div>
+                <span className="text-slate-900">{visitedIndices.size - Object.keys(answers).length - (new Set([...reviewedIndices].filter(x => !answers[x]))).size}</span>
               </div>
-              <span>{Math.max(0, questions.length - Object.keys(answers).length)}</span>
+              <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 bg-emerald-500 shape-pentagon"></div>
+                  <span className="text-slate-400">Answered</span>
+                </div>
+                <span className="text-slate-900">{Object.keys(answers).length}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 bg-purple-500 shape-circle"></div>
+                  <span className="text-slate-400">Reviewed</span>
+                </div>
+                <span className="text-slate-900">{reviewedIndices.size}</span>
+              </div>
             </div>
           </div>
         </div>

@@ -537,11 +537,14 @@ const Users = ({ user, profile: activeProfile }) => {
             <div className="flex flex-col sm:flex-row gap-6 mb-10 p-6 rounded-2xl" style={{ backgroundColor: 'var(--input-bg)', border: '1px solid var(--glass-border)' }}>
               <div className="relative group shrink-0">
                 <div className="absolute -inset-1.5 bg-gradient-to-tr from-primary-500 to-purple-600 rounded-3xl blur opacity-30"></div>
-                <img
-                  src={selectedUser.profile_photo_url || 'https://via.placeholder.com/200'}
-                  alt=""
-                  className="relative w-36 h-36 rounded-2xl object-cover shadow-2xl"
-                />
+                <div className="relative w-36 h-36 rounded-2xl overflow-hidden shadow-2xl bg-slate-800">
+                  <img
+                    src={selectedUser.profile_photo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUser.full_name || 'U')}&background=random`}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUser.full_name || 'U')}&background=6366f1&color=fff`; }}
+                  />
+                </div>
               </div>
               <div className="flex-1 space-y-3">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-light)' }}>
@@ -577,9 +580,10 @@ const Users = ({ user, profile: activeProfile }) => {
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {[
+                   {[
                     { label: 'Aadhar Card (Front)', url: selectedUser.aadhaar_front_url },
                     { label: 'Aadhar Card (Back)',  url: selectedUser.aadhaar_back_url  },
+                    { label: 'PAN Card',           url: selectedUser.pan_url           },
                   ].map(({ label, url }) => {
                     const isPdf = url && url.toLowerCase().includes('.pdf');
                     const fileType = !url ? 'none' : isPdf ? 'PDF Document' : 'Image File';
@@ -589,42 +593,43 @@ const Users = ({ user, profile: activeProfile }) => {
                         className="flex flex-col gap-4 p-5 rounded-2xl transition-all duration-300"
                         style={{ backgroundColor: 'var(--input-bg)', border: '1px solid var(--glass-border)' }}
                       >
-                        {/* Header row */}
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                            style={{ backgroundColor: url ? 'rgba(99,102,241,0.15)' : 'rgba(0,0,0,0.05)', border: '1px solid var(--glass-border)' }}>
-                            {isPdf ? (
-                              <svg width="22" height="22" fill="none" stroke="#818cf8" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><polyline points="13 3 13 9 19 9" stroke="#818cf8" strokeWidth="2"/></svg>
-                            ) : url ? (
-                              <svg width="22" height="22" fill="none" stroke="#818cf8" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke="#818cf8"/><circle cx="8.5" cy="8.5" r="1.5" fill="#818cf8" stroke="none"/><polyline points="21 15 16 10 5 21" stroke="#818cf8" strokeWidth="2"/></svg>
-                            ) : (
-                              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" style={{ color: 'var(--text-light)', opacity: 0.4 }}><path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm truncate text-[color:var(--text-dark)]">{label}</p>
-                            <p className="text-xs font-medium" style={{ color: 'var(--text-light)' }}>{fileType}</p>
-                          </div>
+                        {/* Image/PDF Preview Card */}
+                        <div className="relative h-48 rounded-xl border-2 border-dashed overflow-hidden flex flex-col items-center justify-center bg-slate-50 transition-all group-hover:border-primary-300"
+                          style={{ borderColor: 'var(--glass-border)' }}>
                           {url ? (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0"
-                              style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>Uploaded</span>
+                            isPdf ? (
+                              <div className="flex flex-col items-center gap-3">
+                                <svg width="40" height="40" fill="none" stroke="#818cf8" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><polyline points="13 3 13 9 19 9" stroke="#818cf8" strokeWidth="2"/></svg>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">PDF Document</span>
+                              </div>
+                            ) : (
+                              <img 
+                                src={url} 
+                                alt={label} 
+                                className="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform duration-500"
+                                onClick={() => { setDocViewLabel(label); setDocViewUrl(url); }}
+                              />
+                            )
                           ) : (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0"
-                              style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>Missing</span>
+                            <div className="flex flex-col items-center gap-3 text-slate-300">
+                              <svg width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24"><path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                              <span className="text-[10px] font-black uppercase tracking-widest opacity-40">No Document</span>
+                            </div>
                           )}
                         </div>
 
-                        {/* No document empty state */}
-                        {!url && (
-                          <div className="flex flex-col items-center justify-center py-7 rounded-xl border-2 border-dashed gap-2"
-                            style={{ borderColor: 'var(--glass-border)' }}>
-                            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"
-                              style={{ color: 'var(--text-light)', opacity: 0.35 }}>
-                              <path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-                            </svg>
-                            <p className="text-sm font-bold" style={{ color: 'var(--text-light)', opacity: 0.45 }}>No document uploaded</p>
+                        {/* Info row */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <p className="font-bold text-sm text-[color:var(--text-dark)]">{label}</p>
+                            <p className="text-[10px] font-medium" style={{ color: 'var(--text-light)' }}>{fileType}</p>
                           </div>
-                        )}
+                          {url ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Uploaded</span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-500 border border-rose-500/20">Missing</span>
+                          )}
+                        </div>
 
                         {/* Action buttons */}
                         {url && (

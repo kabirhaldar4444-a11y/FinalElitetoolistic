@@ -12,8 +12,25 @@ const Profile = ({ profile }) => {
           {/* Avatar Section */}
           <div className="relative mb-8 group">
             <div className="absolute -inset-2 bg-gradient-to-tr from-primary-500 to-purple-600 rounded-full blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
-            <div className="relative w-32 h-32 rounded-full border-4 flex items-center justify-center text-5xl font-black shadow-2xl" style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--glass-border)', color: 'var(--text-dark)' }}>
-              {profile?.full_name?.charAt(0) || 'C'}
+            <div className="relative w-32 h-32 rounded-full border-4 overflow-hidden shadow-2xl bg-slate-900" style={{ borderColor: 'var(--glass-border)' }}>
+              {profile?.profile_photo_url ? (
+                <img 
+                  src={profile.profile_photo_url} 
+                  alt={profile?.full_name} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                />
+              ) : null}
+              <div 
+                className="w-full h-full flex items-center justify-center text-5xl font-black"
+                style={{ 
+                  display: profile?.profile_photo_url ? 'none' : 'flex',
+                  color: 'var(--text-dark)',
+                  backgroundColor: 'var(--card-bg)'
+                }}
+              >
+                {profile?.full_name?.charAt(0) || 'C'}
+              </div>
             </div>
           </div>
 

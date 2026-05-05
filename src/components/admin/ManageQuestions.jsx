@@ -15,6 +15,8 @@ const ManageQuestions = ({ exam, onBack }) => {
     explanation: ''
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
 
   useEffect(() => {
     fetchQuestions();
@@ -205,6 +207,34 @@ const ManageQuestions = ({ exam, onBack }) => {
     reader.readAsArrayBuffer(file);
   };
 
+  const handleJsonSubmit = async () => {
+    try {
+      if (!jsonInput.trim()) return;
+      const parsedData = JSON.parse(jsonInput);
+      if (!Array.isArray(parsedData)) throw new Error('Data must be an array of questions');
+
+      const questionsToInsert = parsedData.map(q => ({
+        exam_id: exam.id,
+        question_text: q.question || q.question_text || '',
+        options: q.options || [],
+        correct_option: parseInt(q.correctOption || q.correct_option || 0),
+        explanation: q.explanation || ''
+      })).filter(q => q.question_text && q.options.length >= 2);
+
+      if (questionsToInsert.length === 0) throw new Error('No valid questions found in JSON');
+
+      const { error } = await supabase.from('questions').insert(questionsToInsert);
+      if (error) throw error;
+
+      toast(`Successfully injected ${questionsToInsert.length} questions`, 'success');
+      setJsonInput('');
+      setIsJsonModalOpen(false);
+      fetchQuestions();
+    } catch (err) {
+      toast('Invalid JSON: ' + err.message, 'error');
+    }
+  };
+
   return (
     <div className="manage-questions animate-fade-in relative z-10 w-full min-h-[500px]">
       {/* Header Container */}
@@ -223,12 +253,79 @@ const ManageQuestions = ({ exam, onBack }) => {
           </h2>
         </div>
         
-        <label className="btn-premium flex items-center justify-center gap-2 cursor-pointer w-full md:w-auto mt-4 md:mt-0 !px-8 !py-4 h-14">
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-          {isUploading ? 'Uploading...' : 'Upload Excel'}
-          <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} style={{ display: 'none' }} disabled={isUploading} />
-        </label>
+        <div className="flex items-center gap-4 w-full md:w-auto mt-4 md:mt-0">
+          <label className="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm font-bold text-sm">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            {isUploading ? 'Uploading...' : 'Upload File (Excel/CSV)'}
+            <input type="file" accept=".xlsx, .xls, .csv" onChange={handleExcelUpload} style={{ display: 'none' }} disabled={isUploading} />
+          </label>
+
+          <button 
+            onClick={() => setIsJsonModalOpen(true)}
+            className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg font-bold text-sm"
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+            Paste JSON
+          </button>
+        </div>
       </div>
+
+      {/* JSON Modal */}
+      {isJsonModalOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsJsonModalOpen(false)} />
+          <div className="relative bg-white rounded-[2.5rem] p-8 md:p-10 max-w-2xl w-full animate-slide-up shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Direct Code Injection</h3>
+                <p className="text-sm font-medium text-slate-500 mt-1">Paste your JSON question array below</p>
+              </div>
+              <button 
+                onClick={() => setIsJsonModalOpen(false)}
+                className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all"
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="relative mb-8">
+              <textarea 
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+                placeholder='[
+  {
+    "question": "Sample Question?",
+    "options": ["Opt 1", "Opt 2", "Opt 3", "Opt 4"],
+    "correctOption": 1
+  }
+]'
+                className="w-full h-[300px] bg-slate-50 border border-slate-100 rounded-3xl p-6 font-mono text-sm focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all resize-none outline-none"
+              />
+            </div>
+
+            <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 mb-8 flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Smarter Mapping Engine</h4>
+                <p className="text-[11px] font-bold text-blue-800 leading-relaxed opacity-70">
+                  Auto-detects: question/text, options/opt1, correctOption/ans . 1-indexed and 0-indexed values are handled automatically.
+                </p>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleJsonSubmit}
+              disabled={!jsonInput.trim()}
+              className="w-full py-5 rounded-2xl bg-slate-900 text-white font-black tracking-[0.1em] flex items-center justify-center gap-3 hover:bg-slate-800 transition-all disabled:opacity-50 shadow-xl shadow-slate-900/20 active:scale-[0.98] uppercase text-sm"
+            >
+              Inject Code into Database
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative max-w-full">
         {/* Add Question Form - Sticky on Desktop */}

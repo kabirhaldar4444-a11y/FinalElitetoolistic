@@ -57,6 +57,8 @@ const EditUser = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -108,7 +110,7 @@ const EditUser = ({ user }) => {
     if (currentList.includes(examId)) {
       setEditUser({
         ...editUser, 
-        allotted_exam_ids: currentList.filter(eId => eId !== examId)
+        allotted_exam_ids: currentList.filter(eId => String(eId) !== String(examId))
       });
     } else {
       setEditUser({
@@ -254,33 +256,88 @@ const EditUser = ({ user }) => {
             </div>
           )}
 
-          {/* Exam Allocation Grid */}
-          <div className="animate-slide-up animation-delay-200">
+          {/* Exam Allocation Section with Dropdown */}
+          <div className="animate-slide-up animation-delay-200 relative z-40">
             <h2 className="text-2xl font-black mb-8 tracking-tight flex items-center gap-3 text-[color:var(--text-dark)]">
               <span className="w-10 h-10 bg-primary-500/10 rounded-xl flex items-center justify-center text-primary-400">
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 002-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
               </span>
               Allotted Examinations
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {exams.map(exam => (
-                <label 
-                  key={exam.id} 
-                  className={`relative group cursor-pointer glass-card-saas p-6 transition-all duration-300 ${editUser.allotted_exam_ids?.includes(exam.id) ? 'border-primary-500 bg-primary-500/5 ring-1 ring-primary-500' : 'hover:border-primary-500/30'}`}
-                >
-                  <div className="flex items-center gap-4">
+            
+            <div className="relative glass-card-saas p-8">
+              <div className="space-y-6">
+                <label className="text-xs font-bold uppercase tracking-widest ml-1 text-[color:var(--text-light)]">Select Examinations to Allot</label>
+                
+                {/* Search & Selection Trigger */}
+                <div className="relative group">
+                  <div 
+                    className="w-full min-h-[60px] border-2 rounded-2xl p-3 flex flex-wrap gap-2 focus-within:ring-4 focus-within:ring-primary-500/10 transition-all cursor-text"
+                    style={{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--input-border)' }}
+                    onClick={() => document.getElementById('exam-search-input').focus()}
+                  >
+                    {/* Selected Tags */}
+                    {exams.filter(e => editUser.allotted_exam_ids?.includes(e.id)).map(exam => (
+                      <div key={exam.id} className="flex items-center gap-2 bg-primary-500/10 text-primary-600 px-3 py-1.5 rounded-xl border border-primary-500/20 animate-fade-in group/tag">
+                        <span className="text-xs font-black tracking-tight">{exam.title}</span>
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleExamSelection(exam.id); }}
+                          className="hover:text-red-500 transition-colors"
+                        >
+                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {/* Input for Search */}
                     <input 
-                      type="checkbox" 
-                      checked={editUser.allotted_exam_ids?.includes(exam.id)}
-                      onChange={() => toggleExamSelection(exam.id)}
-                      className="w-5 h-5 rounded-md border-slate-700 bg-slate-800 text-primary-500 focus:ring-offset-slate-900 transition-all cursor-pointer"
+                      id="exam-search-input"
+                      type="text"
+                      placeholder={editUser.allotted_exam_ids?.length > 0 ? "" : "Search and select exams..."}
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-bold placeholder:text-slate-400 min-w-[200px] h-9"
+                      value={searchQuery}
+                      onChange={(e) => { setSearchQuery(e.target.value); setIsDropdownOpen(true); }}
+                      onFocus={() => setIsDropdownOpen(true)}
                     />
-                    <span className={`font-bold transition-colors ${editUser.allotted_exam_ids?.includes(exam.id) ? 'text-[color:var(--text-dark)]' : 'text-[color:var(--text-light)] group-hover:text-[color:var(--text-dark)]'}`}>
-                      {exam.title}
-                    </span>
                   </div>
-                </label>
-              ))}
+
+                  {/* Dropdown Menu */}
+                  {isDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(false); }}></div>
+                      <div className="absolute top-[calc(100%+8px)] left-0 right-0 z-[110] glass-card-saas border-2 shadow-2xl rounded-2xl max-h-[300px] overflow-auto animate-slide-up" style={{ borderColor: 'var(--glass-border)' }}>
+                        <div className="p-2 space-y-1">
+                          {exams.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                            <div className="py-8 text-center text-slate-400 font-bold text-sm italic">No exams match your search</div>
+                          )}
+                          {exams.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase())).map(exam => (
+                            <button
+                              key={exam.id}
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); toggleExamSelection(exam.id); }}
+                              className={`w-full flex items-center justify-between p-4 rounded-xl transition-all font-bold text-sm ${editUser.allotted_exam_ids?.includes(exam.id) ? 'bg-primary-500/10 text-primary-600' : 'hover:bg-slate-100 text-[color:var(--text-light)]'}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${editUser.allotted_exam_ids?.includes(exam.id) ? 'bg-primary-500 border-primary-500' : 'border-slate-300'}`}>
+                                  {editUser.allotted_exam_ids?.includes(exam.id) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M5 13l4 4L19 7"/></svg>}
+                                </div>
+                                {exam.title}
+                              </div>
+                              {editUser.allotted_exam_ids?.includes(exam.id) && <span className="text-[10px] font-black uppercase tracking-widest bg-primary-500 text-white px-2 py-0.5 rounded-full">Selected</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Candidates can only take exams that have been allotted to them here
+                </p>
+              </div>
             </div>
           </div>
 

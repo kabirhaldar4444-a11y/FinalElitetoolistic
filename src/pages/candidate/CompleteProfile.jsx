@@ -487,6 +487,8 @@ CONFIRMATION:
     
     if (!profilePhoto) return setError('Please click your photo to continue.');
     if (!signatureBlob) return setError('Please provide your digital signature.');
+    if (!aadhaarFront) return setError('Please upload Aadhaar Card (Front).');
+    if (!aadhaarBack) return setError('Please upload Aadhaar Card (Back).');
     if (!panCard) return setError('Please upload your PAN card.');
     if (!emailValue) return setError('Please provide a valid email address.');
     if (!acceptedTerms) return setError('Please accept the legal terms to continue.');

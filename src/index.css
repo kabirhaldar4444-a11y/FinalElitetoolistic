@@ -201,3 +201,26 @@ select {
   filter: brightness(1.1);
   box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
 }
+
+/* Question Status Shapes */
+.shape-square {
+  clip-path: inset(0 0 0 0);
+  border-radius: 4px;
+}
+.shape-hexagon {
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+.shape-pentagon {
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+.shape-circle {
+  border-radius: 50%;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
