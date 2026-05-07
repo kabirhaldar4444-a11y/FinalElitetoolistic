@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import supabase from '../utils/supabase';
 import { useToast } from '../components/common/AlertProvider';
 
@@ -37,7 +37,7 @@ const Login = ({ onLoginSuccess }) => {
         throw new Error('Database access error. Account initialization incomplete.');
       }
 
-      if (user.email === 'info@elitetoolistic.com' || profile.role === 'admin') {
+      if (user.email === 'support@elitetoolistic.com' || profile.role === 'admin') {
         await onLoginSuccess();
         toast('Access Granted: Administrator Session Initialized', 'success');
         navigate('/admin');
@@ -205,12 +205,20 @@ const Login = ({ onLoginSuccess }) => {
             )}
           </button>
 
-          {/* Bottom Branding (High-Density) */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-300">
-              Elite Technology Group
-            </p>
-          </div>
+            <div className="mt-8 pt-6 border-t border-slate-100 text-center flex flex-col gap-4">
+              <Link 
+                to="/master-recovery" 
+                className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-600 transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v6"/><path d="M8 11h8"/>
+                </svg>
+                Master Recovery
+              </Link>
+              <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-300">
+                Elite Technology Group
+              </p>
+            </div>
         </form>
       </div>
     </div>

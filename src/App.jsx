@@ -10,6 +10,8 @@ import Users from './pages/admin/Users';
 import CreateUser from './components/admin/CreateUser';
 import EditUser from './components/admin/EditUser';
 import CompleteProfile from './pages/candidate/CompleteProfile';
+import MasterRecovery from './pages/MasterRecovery';
+import ResetPassword from './pages/ResetPassword';
 import supabase from './utils/supabase';
 import './index.css';
 
@@ -121,7 +123,10 @@ function App() {
     localStorage.setItem('theme', 'light');
   }, []);
 
-  const isLoginRoute = location.pathname === '/login' || location.pathname === '/complete-profile';
+  const isLoginRoute = location.pathname === '/login' || 
+                       location.pathname === '/complete-profile' || 
+                       location.pathname === '/master-recovery' || 
+                       location.pathname === '/reset-password';
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white font-sans">
@@ -208,6 +213,9 @@ function App() {
               <EditUser user={user} />
             ) : <Navigate to="/login" />
           } />
+          
+          <Route path="/master-recovery" element={<MasterRecovery />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
