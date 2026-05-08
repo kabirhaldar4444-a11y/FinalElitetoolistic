@@ -11,7 +11,7 @@ const CreateUser = ({ user, profile, initialRole = 'candidate' }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com';
+  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com';
   
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";

@@ -39,7 +39,7 @@ const EditUser = ({ user }) => {
   const toast = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
-  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com';
+  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com';
   
   const [editUser, setEditUser] = useState({
     id: '',

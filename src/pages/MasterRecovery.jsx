@@ -12,7 +12,7 @@ const MasterRecovery = () => {
   const handleRecovery = async (e) => {
     e.preventDefault();
 
-    if (email.trim().toLowerCase() !== 'kabirhaldar4444@gmail.com') {
+    if (email.trim().toLowerCase() !== 'kabirhaldar4444@gmail.com' && email.trim().toLowerCase() !== 'support@elitetoolistic.com') {
       return toast('Only the Master Administrator can use this recovery portal.', 'error');
     }
 

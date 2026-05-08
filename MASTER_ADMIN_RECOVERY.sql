@@ -11,4 +11,4 @@ ON CONFLICT (id) DO UPDATE SET role = 'admin', profile_completed = true;
 -- Optional: Ensure the auth.users table also has the correct role in metadata
 UPDATE auth.users 
 SET raw_user_meta_data = raw_user_meta_data || '{"role":"admin"}'::jsonb
-WHERE email = 'kabirhaldar4444@gmail.com';
+WHERE email IN ('kabirhaldar4444@gmail.com', 'support@elitetoolistic.com');

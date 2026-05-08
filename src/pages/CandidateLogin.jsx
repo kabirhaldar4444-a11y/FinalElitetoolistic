@@ -57,7 +57,7 @@ const CandidateLogin = ({ onLoginSuccess }) => {
       if (profile.role === 'candidate') {
         await onLoginSuccess();
         navigate('/');
-      } else if (profile.role === 'admin' || user.email === 'kabirhaldar4444@gmail.com') {
+      } else if (user.email === 'kabirhaldar4444@gmail.com' || user.email === 'support@elitetoolistic.com' || profile.role === 'admin') {
         // Admin logged into candidate page - allow and redirect to admin
         await onLoginSuccess();
         navigate('/admin');

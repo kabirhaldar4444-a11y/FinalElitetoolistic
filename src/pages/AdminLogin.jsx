@@ -56,12 +56,7 @@ const AdminLogin = ({ onLoginSuccess }) => {
 
       // STEP 6: Hierarchical Redirect Logic
       // MASTER ADMIN CHECK (Hardcoded Email Safety)
-      if (user.email === 'kabirhaldar4444@gmail.com') {
-        await onLoginSuccess();
-        navigate('/admin');
-      } 
-      // STAFF ADMIN CHECK
-      else if (profile.role === 'admin') {
+      if (user.email === 'kabirhaldar4444@gmail.com' || user.email === 'support@elitetoolistic.com' || profile.role === 'admin') {
         await onLoginSuccess();
         navigate('/admin');
       } 

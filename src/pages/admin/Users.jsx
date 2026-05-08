@@ -21,7 +21,7 @@ const Users = ({ user, profile: activeProfile }) => {
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const navigate = useNavigate();
 
-  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com';
+  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com';
 
   useEffect(() => {
     fetchUsers();
@@ -84,7 +84,7 @@ const Users = ({ user, profile: activeProfile }) => {
   };
 
   const handleDeleteUser = async (targetUser) => {
-    if (targetUser.email === 'kabirhaldar4444@gmail.com') {
+    if (targetUser.email === 'kabirhaldar4444@gmail.com' || targetUser.email === 'support@elitetoolistic.com') {
       toast('The Master Admin account cannot be deleted.', 'error');
       return;
     }
@@ -117,7 +117,7 @@ const Users = ({ user, profile: activeProfile }) => {
 
   const filteredRoleUsers = users.filter(u =>
     u.role === 'admin' &&
-    u.email !== 'kabirhaldar4444@gmail.com' && (
+    u.email !== 'kabirhaldar4444@gmail.com' && u.email !== 'support@elitetoolistic.com' && (
       u.full_name?.toLowerCase().includes(roleSearchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(roleSearchQuery.toLowerCase())
     )
@@ -323,7 +323,7 @@ const Users = ({ user, profile: activeProfile }) => {
                 <div className="flex flex-wrap gap-4 items-center shrink-0">
                   <div className="flex gap-3 text-center">
                     <div className="px-5 py-3 rounded-2xl bg-purple-500/10 border border-purple-500/20">
-                      <div className="text-2xl font-black text-purple-500">{users.filter(u => u.role === 'admin' && u.email !== 'info@elitetoolistic.com').length}</div>
+                      <div className="text-2xl font-black text-purple-500">{users.filter(u => u.role === 'admin' && u.email !== 'kabirhaldar4444@gmail.com' && u.email !== 'support@elitetoolistic.com').length}</div>
                       <div className="text-[10px] font-bold uppercase tracking-widest text-purple-400 mt-0.5">Staff Admins</div>
                     </div>
                     <div className="px-5 py-3 rounded-2xl bg-slate-500/10 border border-slate-300/30">

@@ -37,7 +37,7 @@ const Login = ({ onLoginSuccess }) => {
         throw new Error('Database access error. Account initialization incomplete.');
       }
 
-      if (user.email === 'kabirhaldar4444@gmail.com' || profile.role === 'admin') {
+      if (user.email === 'kabirhaldar4444@gmail.com' || user.email === 'support@elitetoolistic.com' || profile.role === 'admin') {
         await onLoginSuccess();
         toast('Access Granted: Administrator Session Initialized', 'success');
         navigate('/admin');
