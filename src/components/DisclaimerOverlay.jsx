@@ -190,7 +190,7 @@ const DisclaimerOverlay = ({ user, profile }) => {
           subTitle: "Your Rights",
           subPoints: [
             "You have the right to: Access the information we hold about you, Request correction or deletion of inaccurate data, Withdraw consent for marketing communications at any time.",
-            "To exercise these rights, please contact our support team at support@elitetoolistic.com."
+            "To exercise these rights, please contact our support team at kabirhaldar4444@gmail.com."
           ]
         },
         {

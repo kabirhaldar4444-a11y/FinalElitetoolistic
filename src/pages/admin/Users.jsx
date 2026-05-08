@@ -21,7 +21,7 @@ const Users = ({ user, profile: activeProfile }) => {
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const navigate = useNavigate();
 
-  const isSuperAdmin = user?.email === 'info@elitetoolistic.com';
+  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com';
 
   useEffect(() => {
     fetchUsers();
@@ -84,7 +84,7 @@ const Users = ({ user, profile: activeProfile }) => {
   };
 
   const handleDeleteUser = async (targetUser) => {
-    if (targetUser.email === 'info@elitetoolistic.com') {
+    if (targetUser.email === 'kabirhaldar4444@gmail.com') {
       toast('The Master Admin account cannot be deleted.', 'error');
       return;
     }
@@ -117,7 +117,7 @@ const Users = ({ user, profile: activeProfile }) => {
 
   const filteredRoleUsers = users.filter(u =>
     u.role === 'admin' &&
-    u.email !== 'info@elitetoolistic.com' && (
+    u.email !== 'kabirhaldar4444@gmail.com' && (
       u.full_name?.toLowerCase().includes(roleSearchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(roleSearchQuery.toLowerCase())
     )

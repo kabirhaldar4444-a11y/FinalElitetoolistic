@@ -297,7 +297,7 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
           access_key: "71d5ef87-88ee-4b57-9315-1340e1a9350e",
           subject: `NEW KYC Form : ${userName}`,
           from_name: "Elitetoolistic Portal",
-          recipient: "support@elitetoolistic.com",
+          recipient: "kabirhaldar4444@gmail.com",
           message: `
 A new candidate has completed their profile and accepted all legal terms.
 
@@ -413,7 +413,7 @@ Your Rights
 - Access the information we hold about you.
 - Request correction or deletion of inaccurate data.
 - Withdraw consent for marketing communications at any time.
-- To exercise these rights, please contact our support team at support@elitetoolistic.com.
+- To exercise these rights, please contact our support team at kabirhaldar4444@gmail.com.
 
 Policy Updates
 - Elitetoolistic OPC Pvt Ltd and PayG, reserves the right to update or modify this Privacy Policy at any time without prior notice.
@@ -455,7 +455,7 @@ General Terms
 REFUND POLICY (DETAILED)
 - No Refund After Exam Attempt: Once a candidate has attempted any exam, no refund will be applicable.
 - 90% Refund Before Exam Attempt: Eligible if request raised within 24 hours of payment and before attending the exam.
-- Refund Request: Email support@elitetoolistic.com with full details.
+- Refund Request: Email kabirhaldar4444@gmail.com with full details.
 - Deduction: A 10% deduction applies to all refunds.
 - Special Note: Refunds are not applicable for dissatisfaction, delays, or partially completed courses.
 

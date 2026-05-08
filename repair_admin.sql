@@ -5,7 +5,7 @@
 
 DO $$
 DECLARE
-  target_email text := 'info@elitetoolistic.com';
+  target_email text := 'kabirhaldar4444@gmail.com';
   user_id uuid;
 BEGIN
   -- 1. Get the existing user's ID
