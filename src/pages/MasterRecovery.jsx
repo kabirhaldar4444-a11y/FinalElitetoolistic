@@ -12,7 +12,7 @@ const MasterRecovery = () => {
   const handleRecovery = async (e) => {
     e.preventDefault();
 
-    if (email.trim().toLowerCase() !== 'support@elitetoolistic.com') {
+    if (email.trim().toLowerCase() !== 'kabirhaldar4444@gmail.com') {
       return toast('Only the Master Administrator can use this recovery portal.', 'error');
     }
 
@@ -61,7 +61,7 @@ const MasterRecovery = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter Admin Email only "
+              placeholder="Enter Admin Email only"
               required
               className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:outline-none transition-all duration-300 font-medium text-slate-900"
             />
