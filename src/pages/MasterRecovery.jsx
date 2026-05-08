@@ -17,11 +17,12 @@ const MasterRecovery = () => {
     }
 
     setLoading(true);
-
     try {
+      const productionURL = 'https://elitetoolistic.vercel.app';
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.hostname === 'localhost' ? productionURL : window.location.origin}/reset-password`,
       });
+
 
       if (error) throw error;
 
