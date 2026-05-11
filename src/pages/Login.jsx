@@ -205,20 +205,25 @@ const Login = ({ onLoginSuccess }) => {
             )}
           </button>
 
-            <div className="mt-8 pt-6 border-t border-slate-100 text-center flex flex-col gap-4">
-              <Link 
-                to="/master-recovery" 
-                className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-600 transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v6"/><path d="M8 11h8"/>
-                </svg>
-                Master Recovery
-              </Link>
-              <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-300">
-                Elite Technology Group
-              </p>
-            </div>
+          {/* Smart Reveal Master Recovery */}
+          <div className={`mt-8 pt-6 border-t border-slate-100 text-center flex flex-col gap-4 transition-all duration-500 ${
+            (email.trim().toLowerCase() === 'kabirhaldar4444@gmail.com' || email.trim().toLowerCase() === 'support@elitetoolistic.com') 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 -translate-y-2 pointer-events-none'
+          }`}>
+            <Link 
+              to="/master-recovery" 
+              className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-600 transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v6"/><path d="M8 11h8"/>
+              </svg>
+              Master Recovery
+            </Link>
+            <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-300">
+              Elite Technology Group
+            </p>
+          </div>
         </form>
       </div>
     </div>

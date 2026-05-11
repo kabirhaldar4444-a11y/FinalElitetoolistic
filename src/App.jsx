@@ -60,6 +60,13 @@ function App() {
   useEffect(() => {
     validateUser();
 
+    // Handle Password Recovery redirection
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password');
+      }
+    });
+
     // REALTIME: Listen for profile changes (exam allotment, role changes, etc.)
     const profileSubscription = supabase
       .channel('profile-updates')
@@ -136,7 +143,7 @@ function App() {
 
   return (
     <div className="premium-container relative min-h-screen">
-      {!isLoginRoute && (
+      {!isLoginRoute && !activeExam && (
         <Header 
           isAdmin={profile?.role === 'admin'} 
           isCandidate={profile?.role === 'candidate'}
