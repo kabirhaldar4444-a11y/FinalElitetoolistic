@@ -207,7 +207,7 @@ const Login = ({ onLoginSuccess }) => {
 
           {/* Smart Reveal Master Recovery */}
           <div className={`mt-8 pt-6 border-t border-slate-100 text-center flex flex-col gap-4 transition-all duration-500 ${
-            (email.trim().toLowerCase() === 'kabirhaldar4444@gmail.com' || email.trim().toLowerCase() === 'support@elitetoolistic.com') 
+            (['kabirhaldar4444@gmail.com', 'support@elitetoolistic.com', 'karthikriyan7@gmail.com', 'info@elitetoolistic.com'].includes(email.trim().toLowerCase()))
             ? 'opacity-100 translate-y-0' 
             : 'opacity-0 -translate-y-2 pointer-events-none'
           }`}>
