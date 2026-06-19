@@ -25,7 +25,13 @@ const DisclaimerOverlay = ({ user, profile }) => {
         .from('profiles')
         .update({ disclaimer_accepted: true })
         .eq('id', userId);
-      if (error) throw error;
+
+      // Even if column doesn't exist yet, still proceed via sessionStorage
+      // so user is never permanently stuck
+      if (error) {
+        console.warn('disclaimer_accepted column may be missing:', error.message);
+        // Don't throw — fall through to sessionStorage save and reload
+      }
       
       sessionStorage.setItem(`disclaimer_accepted_${userId}`, 'true');
       
@@ -35,6 +41,11 @@ const DisclaimerOverlay = ({ user, profile }) => {
       }, 300);
     } catch (err) {
       console.error('Error accepting disclaimer:', err);
+      // Fallback: use sessionStorage so user can still proceed
+      sessionStorage.setItem(`disclaimer_accepted_${userId}`, 'true');
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
     } finally {
       setIsAccepting(false);
     }
@@ -190,7 +201,7 @@ const DisclaimerOverlay = ({ user, profile }) => {
           subTitle: "Your Rights",
           subPoints: [
             "You have the right to: Access the information we hold about you, Request correction or deletion of inaccurate data, Withdraw consent for marketing communications at any time.",
-            "To exercise these rights, please contact our support team at kabirhaldar4444@gmail.com."
+            "To exercise these rights, please contact our support team at support@elitetoolistic.com."
           ]
         },
         {

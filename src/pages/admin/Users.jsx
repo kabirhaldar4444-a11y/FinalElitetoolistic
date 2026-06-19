@@ -15,13 +15,17 @@ const Users = ({ user, profile: activeProfile }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [docViewUrl, setDocViewUrl] = useState(null);
   const [docViewLabel, setDocViewLabel] = useState('');
+  const [docErrors, setDocErrors] = useState({});
   const [activeTab, setActiveTab] = useState('candidates');
   const [roleSearchQuery, setRoleSearchQuery] = useState('');
   const [togglingId, setTogglingId] = useState(null);
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const navigate = useNavigate();
 
-  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com';
+  // Super admin = master-level access (can manage other admins too)
+  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com' || user?.email === 'info@elitetoolistic.com';
+  // Any admin (including staff) can see candidates
+  const isAdmin = isSuperAdmin || activeProfile?.role === 'admin';
 
   useEffect(() => {
     fetchUsers();
@@ -35,11 +39,13 @@ const Users = ({ user, profile: activeProfile }) => {
       .select('*')
       .order('full_name');
 
+    // Only super admins see all roles; staff admins only see candidates
     if (!isSuperAdmin) {
       query = query.eq('role', 'candidate');
     }
 
     const { data, error } = await query;
+    if (error) console.error('fetchUsers error:', error.message);
     if (data) setUsers(data);
     setLoading(false);
   };
@@ -117,7 +123,7 @@ const Users = ({ user, profile: activeProfile }) => {
 
   const filteredRoleUsers = users.filter(u =>
     u.role === 'admin' &&
-    u.email !== 'kabirhaldar4444@gmail.com' && u.email !== 'support@elitetoolistic.com' && (
+    u.email !== 'kabirhaldar4444@gmail.com' && u.email !== 'support@elitetoolistic.com' && u.email !== 'info@elitetoolistic.com' && (
       u.full_name?.toLowerCase().includes(roleSearchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(roleSearchQuery.toLowerCase())
     )
@@ -583,10 +589,13 @@ const Users = ({ user, profile: activeProfile }) => {
                    {[
                     { label: 'Aadhar Card (Front)', url: selectedUser.aadhaar_front_url },
                     { label: 'Aadhar Card (Back)',  url: selectedUser.aadhaar_back_url  },
-                    { label: 'PAN Card',           url: selectedUser.pan_url           },
-                  ].map(({ label, url }) => {
+                    { label: 'PAN Card',            url: selectedUser.pan_url           },
+                             ].map(({ label, url }) => {
                     const isPdf = url && url.toLowerCase().includes('.pdf');
-                    const fileType = !url ? 'none' : isPdf ? 'PDF Document' : 'Image File';
+                    const isWord = url && (url.toLowerCase().includes('.doc') || url.toLowerCase().includes('.docx'));
+                    const hasLoadError = url && docErrors[url];
+                    const isImage = url && !isPdf && !isWord && !hasLoadError;
+                    const fileType = !url ? 'none' : isPdf ? 'PDF Document' : isWord ? 'Word Document' : isImage ? 'Image File' : 'Document File';
                     return (
                       <div
                         key={label}
@@ -602,10 +611,16 @@ const Users = ({ user, profile: activeProfile }) => {
                                 <svg width="40" height="40" fill="none" stroke="#818cf8" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/><polyline points="13 3 13 9 19 9" stroke="#818cf8" strokeWidth="2"/></svg>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">PDF Document</span>
                               </div>
+                            ) : isWord || hasLoadError ? (
+                              <div className="flex flex-col items-center gap-3">
+                                <svg width="40" height="40" fill="none" stroke="#6366f1" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Document File</span>
+                              </div>
                             ) : (
                               <img 
                                 src={url} 
                                 alt={label} 
+                                onError={() => setDocErrors(prev => ({ ...prev, [url]: true }))}
                                 className="w-full h-full object-cover cursor-pointer hover:scale-110 transition-transform duration-500"
                                 onClick={() => { setDocViewLabel(label); setDocViewUrl(url); }}
                               />
@@ -714,7 +729,7 @@ const Users = ({ user, profile: activeProfile }) => {
                 </div>
                 <div>
                   <h4 className="font-black text-sm text-[color:var(--text-dark)]">{docViewLabel}</h4>
-                  <p className="text-xs" style={{ color: 'var(--text-light)' }}>{docViewUrl.toLowerCase().includes('.pdf') ? 'PDF Document' : 'Image Preview'}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-light)' }}>{docViewUrl.toLowerCase().includes('.pdf') ? 'PDF Document' : (docViewUrl.toLowerCase().includes('.doc') || docViewUrl.toLowerCase().includes('.docx') || docErrors[docViewUrl]) ? 'Word Document' : 'Image Preview'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -739,7 +754,7 @@ const Users = ({ user, profile: activeProfile }) => {
                 </button>
               </div>
             </div>
-
+ 
             {/* Modal content */}
             <div className="flex-1 overflow-auto min-h-0 p-4">
               {docViewUrl.toLowerCase().includes('.pdf') ? (
@@ -749,6 +764,18 @@ const Users = ({ user, profile: activeProfile }) => {
                   className="w-full rounded-xl border"
                   style={{ height: '65vh', borderColor: 'var(--glass-border)' }}
                 />
+              ) : (docViewUrl.toLowerCase().includes('.doc') || docViewUrl.toLowerCase().includes('.docx') || docErrors[docViewUrl]) ? (
+                <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 p-8 text-center">
+                  <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-500">
+                    <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-base text-[color:var(--text-dark)] mb-1">Document Preview Unavailable</h5>
+                    <p className="text-sm max-w-md" style={{ color: 'var(--text-light)' }}>
+                      This file is a Word document or non-image format and cannot be previewed inline. Please download it using the button above.
+                    </p>
+                  </div>
+                </div>
               ) : (
                 <div className="flex items-center justify-center min-h-[300px]">
                   <img

@@ -211,7 +211,7 @@ function App() {
 
           <Route path="/admin/users/new" element={
             profile?.role === 'admin' ? (
-              <CreateUser />
+              <CreateUser user={user} profile={profile} isPage={true} />
             ) : <Navigate to="/login" />
           } />
 

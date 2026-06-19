@@ -5,32 +5,67 @@ import UserSubmissions from './UserSubmissions';
 import { useToast } from '../common/AlertProvider';
 
 const DocumentPreview = ({ title, url }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (!url) {
+    return (
+      <div className="glass-card-saas p-4 flex flex-col gap-3 h-full">
+        <h4 className="text-sm font-bold tracking-widest uppercase text-[color:var(--text-light)]">{title}</h4>
+        <div className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-[color:var(--glass-border)] text-[color:var(--text-light)] bg-black/5 opacity-50">
+          <svg width="24" height="24" className="mb-2" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+          <span className="text-xs font-bold uppercase tracking-wider">No document</span>
+        </div>
+      </div>
+    );
+  }
+
+  const urlLower = url.toLowerCase();
+  const isPdf = urlLower.includes('.pdf');
+  const isWord = urlLower.includes('.doc') || urlLower.includes('.docx');
+  const isImage = !isPdf && !isWord && !hasError;
+
+  if (isImage) {
+    return (
+      <div className="glass-card-saas p-4 flex flex-col gap-3 h-full">
+        <h4 className="text-sm font-bold tracking-widest uppercase text-[color:var(--text-light)]">{title}</h4>
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden rounded-xl border border-[color:var(--glass-border)] aspect-video bg-black/10 flex items-center justify-center">
+          <img 
+            src={url} 
+            alt={title} 
+            onError={() => setHasError(true)}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]" 
+          />
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
+             <span className="text-white font-bold text-sm bg-primary-500/50 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-lg flex items-center gap-2">
+               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+               Inspect
+             </span>
+          </div>
+        </a>
+      </div>
+    );
+  }
+
+  if (isPdf) {
+    return (
+      <div className="glass-card-saas p-4 flex flex-col gap-3 h-full">
+        <h4 className="text-sm font-bold tracking-widest uppercase text-[color:var(--text-light)]">{title}</h4>
+        <a href={url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center gap-2 aspect-video rounded-xl border border-[color:var(--glass-border)] hover:border-primary-500 hover:bg-primary-500/5 transition-all text-primary-500 group">
+          <svg className="group-hover:-translate-y-1 transition-transform" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span className="text-sm font-bold">View PDF Document</span>
+        </a>
+      </div>
+    );
+  }
+
+  // Non-image or Word Doc fallback
   return (
     <div className="glass-card-saas p-4 flex flex-col gap-3 h-full">
       <h4 className="text-sm font-bold tracking-widest uppercase text-[color:var(--text-light)]">{title}</h4>
-      {url ? (
-        url.match(/\.(jpeg|jpg|gif|png)$/i) || !url.includes('.pdf') ? (
-           <a href={url} target="_blank" rel="noopener noreferrer" className="block relative group overflow-hidden rounded-xl border border-[color:var(--glass-border)] aspect-video bg-black/10 flex items-center justify-center">
-             <img src={url} alt={title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]" />
-             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
-                <span className="text-white font-bold text-sm bg-primary-500/50 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-lg flex items-center gap-2">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-                  Inspect
-                </span>
-             </div>
-           </a>
-        ) : (
-           <a href={url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center gap-2 aspect-video rounded-xl border border-[color:var(--glass-border)] hover:border-primary-500 hover:bg-primary-500/5 transition-all text-primary-500 group">
-             <svg className="group-hover:-translate-y-1 transition-transform" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-             <span className="text-sm font-bold">View PDF Document</span>
-           </a>
-        )
-      ) : (
-        <div className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-[color:var(--glass-border)] text-[color:var(--text-light)] bg-black/5 opacity-50">
-          <svg width="24" height="24" className="mb-2" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-          <span className="text-xs font-bold uppercase tracking-wider">No document</span>
-        </div>
-      )}
+      <a href={url} download target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center gap-4 aspect-video rounded-xl border border-[color:var(--glass-border)] hover:border-primary-500 hover:bg-primary-500/5 transition-all text-primary-500 group">
+        <svg className="group-hover:-translate-y-1 transition-transform text-indigo-500" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        <span className="text-xs font-black uppercase tracking-wider text-center px-2">Download Document</span>
+      </a>
     </div>
   );
 };
@@ -39,7 +74,7 @@ const EditUser = ({ user }) => {
   const toast = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
-  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com';
+  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com' || user?.email === 'info@elitetoolistic.com';
   
   const [editUser, setEditUser] = useState({
     id: '',

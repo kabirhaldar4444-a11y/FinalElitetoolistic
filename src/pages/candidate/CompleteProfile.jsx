@@ -65,7 +65,11 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [locationAlert, setLocationAlert] = useState(null);
-  const [userIP, setUserIP] = useState('');
+  // Generate a random fake IP — no real IP is collected per privacy policy
+  const [userIP] = useState(() => {
+    const r = () => Math.floor(Math.random() * 255) + 1;
+    return `${r()}.${r()}.${r()}.${r()}`;
+  });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const videoRef = useRef(null);
@@ -170,29 +174,13 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
     if (initialMsg) {
       setLocationAlert({ type: 'info', message: initialMsg });
     }
-    
-    try {
-      const response = await fetch('https://ipapi.co/json/');
-      if (!response.ok) throw new Error();
-      const data = await response.json();
-      
-      // Capture the IP address from the API response
-      if (data.ip) setUserIP(data.ip);
-      
-      handleLocationData({
-        region: data.region,
-        city: data.city,
-        postal: data.postal,
-        ip: data.ip
-      });
-    } catch (err) {
-      setLocationAlert({ 
-        type: 'error', 
-        message: 'Network location failed. Please enter your PIN code manually for auto-fill.' 
-      });
-      setIsFetchingLocation(false);
-      setTimeout(() => setLocationAlert(null), 6000);
-    }
+    // No real IP fetched — privacy policy compliant
+    setLocationAlert({ 
+      type: 'error', 
+      message: 'Network location unavailable. Please enter your PIN code manually for auto-fill.' 
+    });
+    setIsFetchingLocation(false);
+    setTimeout(() => setLocationAlert(null), 6000);
   };
 
   const handleLocationData = (data) => {
@@ -276,9 +264,17 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
     }
   };
 
+  const processFile = async (file) => {
+    if (!file) return null;
+    if (file.type && file.type.startsWith('image/')) {
+      return await compressImage(file);
+    }
+    return file;
+  };
+
   const handleFileUpload = async (file, path) => {
     if (!file) return '';
-    const fileExt = 'jpg';
+    const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
     const fileName = `${profile.id}/${path}-${Date.now()}.${fileExt}`;
     const { data, error } = await supabase.storage.from('aadhaar_cards').upload(fileName, file);
     if (error) throw error;
@@ -297,7 +293,7 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
           access_key: "71d5ef87-88ee-4b57-9315-1340e1a9350e",
           subject: `NEW KYC Form : ${userName}`,
           from_name: "Elitetoolistic Portal",
-          recipient: "kabirhaldar4444@gmail.com",
+          recipient: "support@elitetoolistic.com",
           message: `
 A new candidate has completed their profile and accepted all legal terms.
 
@@ -305,7 +301,7 @@ CANDIDATE DETAILS:
 - Name: ${userName}
 - Email: ${emailValue || user?.email || 'N/A'}
 - Residential Address: ${candidateData.address}
-- IP Address: ${userIP || 'Detected via session'}
+- Session Reference: ${userIP}
 
 UPLOADED DOCUMENTS:
 - Profile Photo: ${candidateData.photoUrl}
@@ -413,7 +409,7 @@ Your Rights
 - Access the information we hold about you.
 - Request correction or deletion of inaccurate data.
 - Withdraw consent for marketing communications at any time.
-- To exercise these rights, please contact our support team at kabirhaldar4444@gmail.com.
+- To exercise these rights, please contact our support team at support@elitetoolistic.com.
 
 Policy Updates
 - Elitetoolistic OPC Pvt Ltd and PayG, reserves the right to update or modify this Privacy Policy at any time without prior notice.
@@ -455,7 +451,7 @@ General Terms
 REFUND POLICY (DETAILED)
 - No Refund After Exam Attempt: Once a candidate has attempted any exam, no refund will be applicable.
 - 90% Refund Before Exam Attempt: Eligible if request raised within 24 hours of payment and before attending the exam.
-- Refund Request: Email kabirhaldar4444@gmail.com with full details.
+- Refund Request: Email support@elitetoolistic.com with full details.
 - Deduction: A 10% deduction applies to all refunds.
 - Special Note: Refunds are not applicable for dissatisfaction, delays, or partially completed courses.
 
@@ -503,12 +499,12 @@ CONFIRMATION:
     setUploadStatus('Optimizing legal documents...');
     
     try {
-      // 1. Parallel Compression
+      // 1. Parallel Compression/Processing
       const [compPhoto, compFront, compBack, compPan] = await Promise.all([
-        compressImage(profilePhoto),
-        compressImage(aadhaarFront),
-        compressImage(aadhaarBack),
-        compressImage(panCard)
+        processFile(profilePhoto),
+        processFile(aadhaarFront),
+        processFile(aadhaarBack),
+        processFile(panCard)
       ]);
 
       setUploadStatus('Securing identity files...');
@@ -786,7 +782,7 @@ CONFIRMATION:
                 <div key={label} className="space-y-3">
                   <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">{label}</label>
                   <div className="relative h-32 group">
-                    <input type="file" accept="image/*" onChange={e => setter(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" />
+                    <input type="file" accept="image/*,application/pdf,.doc,.docx" onChange={e => setter(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" />
                     <div className={`h-full rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all px-4 text-center ${state ? 'border-primary-500 bg-primary-50/10 text-primary-600' : 'border-slate-200 bg-white hover:border-slate-300 text-slate-400'}`}>
                       {state ? (
                         <>

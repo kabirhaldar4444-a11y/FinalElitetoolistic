@@ -210,16 +210,68 @@ const ManageQuestions = ({ exam, onBack }) => {
   const handleJsonSubmit = async () => {
     try {
       if (!jsonInput.trim()) return;
-      const parsedData = JSON.parse(jsonInput);
+      
+      let cleanInput = jsonInput.trim();
+      
+      // Strip markdown code block wrapping (e.g., ```json ... ```)
+      if (cleanInput.startsWith('```')) {
+        cleanInput = cleanInput.replace(/^```[a-zA-Z]*\s*/, '');
+        cleanInput = cleanInput.replace(/\s*```$/, '');
+        cleanInput = cleanInput.trim();
+      }
+
+      // Strip outer quotes if pasted accidentally
+      if (cleanInput.startsWith('"') && cleanInput.endsWith('"')) {
+        cleanInput = cleanInput.slice(1, -1).trim();
+      } else if (cleanInput.startsWith("'") && cleanInput.endsWith("'")) {
+        cleanInput = cleanInput.slice(1, -1).trim();
+      }
+
+      let parsedData = JSON.parse(cleanInput);
+      
+      // Auto-extract 'data' array if the pasted JSON is an object container
+      if (parsedData && !Array.isArray(parsedData) && Array.isArray(parsedData.data)) {
+        parsedData = parsedData.data;
+      }
+      
       if (!Array.isArray(parsedData)) throw new Error('Data must be an array of questions');
 
-      const questionsToInsert = parsedData.map(q => ({
-        exam_id: exam.id,
-        question_text: q.question || q.question_text || '',
-        options: q.options || [],
-        correct_option: parseInt(q.correctOption || q.correct_option || 0),
-        explanation: q.explanation || ''
-      })).filter(q => q.question_text && q.options.length >= 2);
+      // Auto-detect 1-based vs 0-based indexing
+      let isOneIndexed = false;
+      let hasZero = false;
+      let hasFour = false;
+
+      parsedData.forEach(q => {
+        const val = parseInt(q.correctOption || q.correct_option);
+        if (val === 0) hasZero = true;
+        if (val === 4) hasFour = true;
+      });
+
+      if (hasFour) {
+        isOneIndexed = true;
+      } else if (hasZero) {
+        isOneIndexed = false;
+      } else {
+        // If there are no 0s and no 4s, but there is a 1, it is 1-indexed (Options 1-3)
+        const hasOne = parsedData.some(q => parseInt(q.correctOption || q.correct_option) === 1);
+        if (hasOne && !hasZero) {
+          isOneIndexed = true;
+        }
+      }
+
+      const questionsToInsert = parsedData.map(q => {
+        let correctOpt = parseInt(q.correctOption || q.correct_option || 0);
+        if (isOneIndexed && correctOpt >= 1) {
+          correctOpt = correctOpt - 1;
+        }
+        return {
+          exam_id: exam.id,
+          question_text: q.question || q.question_text || '',
+          options: q.options || [],
+          correct_option: correctOpt,
+          explanation: q.explanation || ''
+        };
+      }).filter(q => q.question_text && q.options.length >= 2);
 
       if (questionsToInsert.length === 0) throw new Error('No valid questions found in JSON');
 

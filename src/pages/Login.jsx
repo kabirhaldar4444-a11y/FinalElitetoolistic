@@ -53,7 +53,13 @@ const Login = ({ onLoginSuccess }) => {
         throw new Error('Access restricted. Please contact administrator.');
       }
     } catch (err) {
-      toast(err.message === 'Invalid login credentials' ? 'Invalid credentials. Please verify your email and password.' : err.message, 'error');
+      let msg = err.message;
+      if (msg === 'Invalid login credentials') {
+        msg = 'Invalid credentials. Please verify your email and password.';
+      } else if (msg?.toLowerCase().includes('email not confirmed')) {
+        msg = 'This account email has not been confirmed yet. Please contact your administrator to activate the account.';
+      }
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }

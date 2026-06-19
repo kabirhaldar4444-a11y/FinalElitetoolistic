@@ -5,7 +5,7 @@ import ManageQuestions from './ManageQuestions';
 
 const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh }) => {
   const [activeTab, setActiveTab] = useState('exams');
-  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com';
+  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com' || user?.email === 'info@elitetoolistic.com';
   const [newTitle, setNewTitle] = useState('');
   const [newDuration, setNewDuration] = useState('');
   const [selectedExam, setSelectedExam] = useState(null);
