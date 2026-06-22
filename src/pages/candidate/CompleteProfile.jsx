@@ -295,181 +295,105 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
           from_name: "Elitetoolistic Portal",
           recipient: "support@elitetoolistic.com",
           message: `
-A new candidate has completed their profile and accepted all legal terms.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+KYC VERIFICATION REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CANDIDATE DETAILS:
-- Name: ${userName}
-- Email: ${emailValue || user?.email || 'N/A'}
-- Residential Address: ${candidateData.address}
-- Session Reference: ${userIP}
+CANDIDATE INFORMATION:
+──────────────────────
+• Full Name: ${userName}
+• Email ID: ${emailValue || user?.email || 'N/A'}
+• PIN Code: ${pincode}
+• Location: ${selectedCity}, ${selectedState}
+• Residential Address: ${address}
+• IP Address: ${userIP}
 
-UPLOADED DOCUMENTS:
-- Profile Photo: ${candidateData.photoUrl}
-- Aadhaar (Front): ${candidateData.frontUrl}
-- Aadhaar (Back): ${candidateData.backUrl}
-- PAN Card: ${candidateData.panUrl}
-- Signature: ${candidateData.signUrl}
+VERIFICATION STATUS:
+───────────────────
+• Declaration: CHECKED & ACCEPTED ✓
+• Signature: CAPTURED & VERIFIED ✓
+• Documentation: ALL ASSETS UPLOADED ✓
 
---------------------------------------------------
-LEGAL ACKNOWLEDGEMENT ACCEPTED BY ${userName.toUpperCase()}:
---------------------------------------------------
+LEGAL ACKNOWLEDGEMENT & ATTESTATION:
+──────────────────────────────────
+1. IDENTITY VERIFICATION:
+Candidate authorizes live photo capture for identity
+authentication and anti-proxy measures.
 
-1. Identity Verification and Authentication
-To ensure the integrity of the examination process and to prevent proxy attendance, the Candidate hereby authorizes the Portal to capture a live photograph (selfie) at the commencement of and/or during the examination. This image will be used solely to authenticate the Candidate’s identity against registered records. Failure to provide a clear image or any attempt to bypass this authentication may result in immediate disqualification.
-
-2. Purpose of Certification and Employment Disclaimer
-The Candidate acknowledges and agrees that this certification is intended solely for personal and professional growth.
+2. PURPOSE OF CERTIFICATION AND EMPLOYMENT DISCLAIMER:
+Candidate acknowledges and agrees that this certification is intended solely for personal and professional growth.
 - No Guarantee of Employment: Successful completion of the exam and issuance of a certificate does not guarantee a job offer, placement, or any form of employment.
 - No Guarantee of Financial Increase: This certification does not entitle the Candidate to a salary hike, promotion, or bonus from any current or future employer.
 The Portal and its affiliates are not liable for any career expectations not met following the attainment of this certification.
 
-3. Academic Integrity
-The Candidate agrees to complete the examination independently without the use of unauthorized materials, AI tools, or external assistance. Any detected malpractice will lead to the permanent banning of the Candidate’s profile and the nullification of any previous results.
+3. ACADEMIC INTEGRITY:
+Candidate agrees to complete the examination independently without the use of unauthorized materials, AI tools, or external assistance. Any detected malpractice will lead to the permanent banning of the Candidate’s profile and the nullification of any previous results.
 
-4. Limitation of Liability
+4. LIMITATION OF LIABILITY:
 The Portal shall not be held responsible for technical failures on the Candidate’s end, including but not limited to internet connectivity issues, hardware malfunctions, or power outages during the examination session.
 
---------------------------------------------------
-ELITETOOLISTIC PLATFORM POLICIES ACCEPTED:
---------------------------------------------------
+FINAL DECLARATION & FULL AGREEMENT:
+──────────────────────────────────
+SERVICE DELIVERY:
+• Enrollment Process: Customers visit the Elitetoolistic website and fill out the Enrollment Form. After form submission, Our team connects with the customer.
+• Process Flow: A detailed email is shared explaining the complete process flow and fee structure. Payments may also be accepted directly through an authorized professional expert trainer account, where applicable.
+• Explanation: During the call, the team explains the course structure, learning journey, and assessment-to-certification flow. The customer then confirms their participation in the program.
+• Fee Payment: Upon successful completion of the fee payment, a GST-compliant invoice is issued within 6 hours. Pre-examination study materials are shared with the learner within 24 hours.
+• Pre-Exam: A Pre-Exam is conducted within 24–48 hours of fee payment. This exam assesses the customer’s initial understanding of the selected domain. Before the exam, the Guidance Team connects to explain the exam process.
+• Certificate: A Pre-Board Professional Certificate is issued with “Under Training” mentioned. Results are shared within 24–48 hours via email.
+• Reward: Customers scoring above 80% become eligible for a gift. One gift can be selected from four available options, which will be delivered accordingly.
+• Training: Access to recorded video lectures is shared within 15 days on payment. Training duration is 90–120 days.
+• Final Exam: A Final Exam is conducted between 90-120 days.
+• Final Certificate: Upon successful completion of all requirements, the Final Certificate is issued. The certificate will clearly state the status as “Certified.”
+• Support: Throughout the entire journey, the Elitetoolistic team remains in contact for guidance and support.
 
-SERVICE DELIVERY
-Enrollment Process
-Customers visit the Elitetoolistic website and fill out the Enrollment Form.
-After form submission, Our team connects with the customer.
-A detailed email is shared explaining the complete process flow and fee structure. Payments may also be accepted directly through an authorized professional expert trainer account, where applicable.
+TERMS & CONDITIONS:
+• Delivery: The complete course will be delivered within 90 to 120 days from the date of enrollment.
+• Access: After enrollment, learners will receive an Invoice, Study Materials and video lectures within 10 working days of making the payment.
+• Exams: A Pre-Board Exam will be scheduled 24 to 48 hours after payment. The final online exam must be attended between 90 to 120 days after enrollment.
+• Certification: Upon successful exam completion, the Final PC Softcopy will be emailed. The certificate will be released with an abbreviation format (e.g., "RCT" for Resilience Coach Training).
+• Training Format: No live training sessions will be provided. Study material and training videos will be shared once only via email. Training videos and study materials are non-transferable.
+• Exam Policy: Multiple exam attempts are not permitted. No hard copy certificates will be delivered.
+• Rewards: Candidates scoring 80% or above in the pre-exam will be eligible for a gift. Candidates provide consent for photo use on official platforms. Gift items will be dispatched within 45 to 60 days.
+• General Terms: All timelines mentioned are approximate. By enrolling, candidates agree to comply with all terms and conditions.
 
-Process Explanation & Confirmation
-During the call, the team explains the course structure, learning journey, and assessment-to-certification flow.
-The customer then confirms their participation in the program.
+PRIVACY POLICY:
+• Information We Collect: Personal Information (Your name, email address, contact number, and country of residence collected during registration or inquiries), Payment Information (Transaction details; we do not store complete payment card or crypto wallet details), Course and Usage Data (Information about the courses you enroll in, your progress, assessments, and interactions with our online learning platform), and Technical Information (Device type, IP address, browser version, and cookies to improve website performance and user experience).
+• Usage: Process your course enrollment and payments, provide access to study materials, exams, and course completion certificates, communicate important updates, reminders, and support-related information, improve course quality, website functionality, and user experience, maintain compliance with our internal policies and applicable laws. We do not sell, trade, or rent your personal information to any third party.
+• Data Security: All personal data is stored securely in encrypted databases. Only authorized Elitetoolistic personnel have access to user data. We regularly update our systems and employ security measures such as SSL encryption to protect against unauthorized access, alteration, or disclosure.
+• Retention & Rights: We retain your personal information for as long as necessary to fulfill course delivery and legal obligations. Once no longer needed, your data will be securely deleted or anonymized. Candidates can access the information we hold about them, request correction or deletion of inaccurate data, or withdraw consent for marketing communications at any time. To exercise these rights, please contact our support team at support@elitetoolistic.com.
+• Use of Cookies: Our website uses cookies to enhance your browsing experience, save login preferences, analyze site traffic and improve user experience. You can choose to disable cookies from your browser settings; however, some website features may not function properly as a result.
+• Third-Party Links: Our website may contain links to third-party websites. Elitetoolistic is not responsible for the privacy practices or content of these external sites.
+• Policy Updates: Elitetoolistic OPC Pvt Ltd and PayG reserves the right to update or modify this Privacy Policy at any time without prior notice.
 
-Fee Payment
-Upon successful completion of the fee payment, a GST-compliant invoice is issued within 6 hours.
-Pre-examination study materials are shared with the learner within 24 hours.
-
-Pre-Exam
-A Pre-Exam is conducted within 24–48 hours of fee payment.
-This exam assesses the customer’s initial understanding of the selected domain.
-Before the exam, the Guidance Team connects to explain the exam process.
-
-Pre-Exam Result & Pre-Board Professional Certificate
-Results are shared within 24–48 hours via email.
-A Pre-Board Professional Certificate is issued with “Under Training” mentioned.
-
-Reward Eligibility
-Customers scoring above 80% become eligible for a gift.
-One gift can be selected from four available options, which will be delivered accordingly.
-
-Self-Paced Training
-Access to recorded video lectures is shared within 15 days on payment.
-Training duration is 90–120 days.
-
-Final Exam
-A Final Exam is conducted between 90-120 days.
-
-Final Certificate
-Upon successful completion of all requirements, the Final Certificate is issued.
-The certificate will clearly state the status as “Certified.”
-
-Continuous Support
-Throughout the entire journey, the Elitetoolistic team remains in contact for guidance and support.
-
-PRIVACY POLICY
-Information We Collect
-We collect the following types of information to ensure smooth operation of our services:
-- Personal Information: Your name, email address, contact number, and country of residence collected during registration or inquiries.
-- Payment Information: Transaction details (amount, date, and payment method). We do not store complete payment card or crypto wallet details.
-- Course and Usage Data: Information about the courses you enroll in, your progress, assessments, and interactions with our online learning platform.
-- Technical Information: Device type, IP address, browser version, and cookies to improve website performance and user experience.
-
-How We Use Your Information
-- Process your course enrollment and payments.
-- Provide access to study materials, exams, and course completion certificates.
-- Communicate important updates, reminders, and support-related information.
-- Improve course quality, website functionality, and user experience.
-- Maintain compliance with our internal policies and applicable laws.
-- We do not sell, trade, or rent your personal information to any third party.
-
-Data Storage and Security
-- All personal data is stored securely in encrypted databases.
-- Only authorized Elitetoolistic personnel have access to user data.
-- We regularly update our systems and employ security measures such as SSL encryption to protect against unauthorized access, alteration, or disclosure.
-
-Use of Cookies
-- Our website uses cookies to: Enhance your browsing experience, Save login preferences, Analyze site traffic and improve user experience.
-- You can choose to disable cookies from your browser settings; however, some website features may not function properly as a result.
-
-Data Retention
-- We retain your personal information for as long as necessary to fulfill course delivery and legal obligations. Once no longer needed, your data will be securely deleted or anonymized.
-
-Third-Party Links
-- Our website may contain links to third-party websites. Elitetoolistic is not responsible for the privacy practices or content of these external sites.
-
-Your Rights
-- Access the information we hold about you.
-- Request correction or deletion of inaccurate data.
-- Withdraw consent for marketing communications at any time.
-- To exercise these rights, please contact our support team at support@elitetoolistic.com.
-
-Policy Updates
-- Elitetoolistic OPC Pvt Ltd and PayG, reserves the right to update or modify this Privacy Policy at any time without prior notice.
-
-TERMS & CONDITIONS 
-Course Duration and Delivery
-- The complete course will be delivered within 90 to 120 days from the date of enrollment.
-- After enrollment, learners will receive an Invoice, Study Materials and video lectures within 10 working days of making the payment.
-- A Pre-Board Exam will be scheduled 24 to 48 hours after payment.
-- The final online exam must be attended between 90 to 120 days after enrollment.
-- Upon successful exam completion, the Final PC Softcopy will be emailed.
-
-Training Format
-- No live training sessions will be provided.
-- Study material and training videos will be shared once only via email.
-- Training videos and study materials are non-transferable.
-- Upon successful completion, the certificate will be released with an abbreviation format (e.g., "RCT" for Resilience Coach Training).
-
-Exam Policy
-- Multiple exam attempts are not permitted.
-- The Final PC Softcopy will be issued within 15 days after the final exam attempt.
-- No hard copy certificates will be delivered.
-
-Refund Policy
-- No refund will be applicable after attempting any exam.
-- A 90% refund is applicable before attempting any exam.
-- There is no 100% refund policy.
-- A 10% deduction will apply to all refunds.
-
-Pre-Examination Reward Policy
-- Candidates scoring 80% or above in the pre-exam will be eligible for a gift.
-- Candidates provide consent for photo use on official platforms.
-- Gift items will be dispatched within 45 to 60 days.
-
-General Terms
-- All timelines mentioned are approximate.
-- By enrolling, candidates agree to comply with all terms and conditions.
-
-REFUND POLICY (DETAILED)
+REFUND POLICY:
+• Refund Rules: No refund will be applicable after attempting any exam. A 90% refund is applicable before attempting any exam. There is no 100% refund policy. A 10% deduction will apply to all refunds.
+• Refund Policy (Detailed):
 - No Refund After Exam Attempt: Once a candidate has attempted any exam, no refund will be applicable.
 - 90% Refund Before Exam Attempt: Eligible if request raised within 24 hours of payment and before attending the exam.
 - Refund Request: Email support@elitetoolistic.com with full details.
 - Deduction: A 10% deduction applies to all refunds.
 - Special Note: Refunds are not applicable for dissatisfaction, delays, or partially completed courses.
 
-Agreement to Policies:
-By enrolling, candidates acknowledge and agree to comply with all Elitetoolistic policies.
+LEGAL NOTICE:
+• Agreement to Policies: By enrolling, candidates acknowledge and agree to comply with all Elitetoolistic policies.
+• Independent Org: Elitetoolistic (OPC) PVT. LTD. is an independent training and service provider.
+• Employment: We do not guarantee any monetary benefit, job placement, or promotion.
+• Third-Party: Elitetoolistic shall not be held responsible for losses incurred via third-party representations.
 
-Independent Organization:
-Elitetoolistic (OPC) PVT. LTD. is an independent training and service provider.
+ACCEPTED BY CANDIDATE: YES ✓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-No Guarantee of Employment:
-We do not guarantee any monetary benefit, job placement, or promotion.
+DOCUMENT ACCESS LINKS:
+─────────────────────
+• Profile Photo: ${candidateData.photoUrl}
+• Aadhaar Card (Front): ${candidateData.frontUrl}
+• Aadhaar Card (Back): ${candidateData.backUrl}
+• PAN Card: ${candidateData.panUrl}
+• Digital Signature: ${candidateData.signUrl}
 
-Third-Party Recommendations:
-Elitetoolistic shall not be held responsible for losses incurred via third-party representations.
-
-CONFIRMATION:
-"${userName}" HAS ACCEPTED ALL THE ABOVE TERMS AND POLICIES VERBATIM.
-          `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Submitted via Elitetoolistic Exam Portal`
         })
       });
     } catch (err) {
