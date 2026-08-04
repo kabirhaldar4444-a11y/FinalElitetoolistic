@@ -28,11 +28,14 @@ const Header = ({ isAdmin, isCandidate, onLogout, isExamActive, onSubmitExam }) 
           <nav className="flex-2 flex justify-center items-center gap-2 md:gap-4">
             {!isExamActive && isAdminRoute && (
               <>
-                <Link to="/admin/users" className={navLinkClass('/admin/users')}>
-                  Users
-                </Link>
                 <Link to="/admin" className={navLinkClass('/admin')}>
                   Exams
+                </Link>
+                <Link to="/admin/admissions" className={navLinkClass('/admin/admissions')}>
+                  Admissions
+                </Link>
+                <Link to="/admin/users" className={navLinkClass('/admin/users')}>
+                  Users
                 </Link>
               </>
             )}
@@ -46,6 +49,12 @@ const Header = ({ isAdmin, isCandidate, onLogout, isExamActive, onSubmitExam }) 
                   Profile
                 </Link>
               </>
+            )}
+
+            {!isExamActive && !isAdmin && !isCandidate && (
+              <Link to="/admission" className={navLinkClass('/admission')}>
+                Online Admission
+              </Link>
             )}
           </nav>
 

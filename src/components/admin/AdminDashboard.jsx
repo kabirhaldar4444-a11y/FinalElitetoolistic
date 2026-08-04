@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import supabase from '../../utils/supabase';
 import CreateUser from './CreateUser';
 import ManageQuestions from './ManageQuestions';
+import AdminAdmissions from './AdminAdmissions';
 
-const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh }) => {
-  const [activeTab, setActiveTab] = useState('exams');
+const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh, initialTab }) => {
+  const [activeTab, setActiveTab] = useState(initialTab || 'exams');
   const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com' || user?.email === 'info@elitetoolistic.com';
   const [newTitle, setNewTitle] = useState('');
   const [newDuration, setNewDuration] = useState('');
@@ -42,15 +43,15 @@ const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh }
           <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-clip-text text-transparent mb-2" style={{ backgroundImage: 'linear-gradient(to right, var(--text-dark), var(--text-light))' }}>
             Admin Dashboard
           </h1>
-          <p className="text-[color:var(--text-light)] font-medium text-lg">Manage exams and candidate accounts from here.</p>
+          <p className="text-[color:var(--text-light)] font-medium text-lg">Manage exams, admissions, and candidate accounts from here.</p>
         </div>
 
         {/* Tab Switcher - Premium Mac-style segmented control */}
         <div className="flex flex-col md:flex-row justify-center md:justify-start mb-12">
-          <div className="flex p-1.5 rounded-2xl border backdrop-blur-xl shadow-lg" style={{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--glass-border)' }}>
+          <div className="flex p-1.5 rounded-2xl border backdrop-blur-xl shadow-lg flex-wrap gap-1" style={{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--glass-border)' }}>
             <button 
               onClick={() => setActiveTab('exams')} 
-              className={`relative px-8 py-3 rounded-xl font-bold text-sm tracking-wide transition-all duration-500 overflow-hidden ${activeTab === 'exams' ? 'shadow-md scale-100' : 'hover:opacity-80 scale-95 opacity-70'}`}
+              className={`relative px-6 py-3 rounded-xl font-bold text-sm tracking-wide transition-all duration-500 overflow-hidden ${activeTab === 'exams' ? 'shadow-md scale-100' : 'hover:opacity-80 scale-95 opacity-70'}`}
               style={{ 
                 backgroundColor: activeTab === 'exams' ? 'var(--card-bg)' : 'transparent',
                 color: activeTab === 'exams' ? 'var(--text-dark)' : 'var(--text-light)',
@@ -59,12 +60,26 @@ const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh }
             >
               <div className="flex items-center gap-2">
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                Exam Management
+                Exams
+              </div>
+            </button>
+            <button 
+              onClick={() => setActiveTab('admissions')} 
+              className={`relative px-6 py-3 rounded-xl font-bold text-sm tracking-wide transition-all duration-500 overflow-hidden ${activeTab === 'admissions' ? 'shadow-md scale-100' : 'hover:opacity-80 scale-95 opacity-70'}`}
+              style={{ 
+                backgroundColor: activeTab === 'admissions' ? 'var(--card-bg)' : 'transparent',
+                color: activeTab === 'admissions' ? 'var(--text-dark)' : 'var(--text-light)',
+                border: activeTab === 'admissions' ? '1px solid var(--glass-border)' : '1px solid transparent'
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+                New Admissions
               </div>
             </button>
             <button 
               onClick={() => setActiveTab('candidates')} 
-              className={`relative px-8 py-3 rounded-xl font-bold text-sm tracking-wide transition-all duration-500 overflow-hidden ${activeTab === 'candidates' ? 'shadow-md scale-100' : 'hover:opacity-80 scale-95 opacity-70'}`}
+              className={`relative px-6 py-3 rounded-xl font-bold text-sm tracking-wide transition-all duration-500 overflow-hidden ${activeTab === 'candidates' ? 'shadow-md scale-100' : 'hover:opacity-80 scale-95 opacity-70'}`}
               style={{ 
                 backgroundColor: activeTab === 'candidates' ? 'var(--card-bg)' : 'transparent',
                 color: activeTab === 'candidates' ? 'var(--text-dark)' : 'var(--text-light)',
@@ -193,6 +208,10 @@ const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh }
                   )}
                 </div>
               </div>
+            </div>
+          ) : activeTab === 'admissions' ? (
+            <div className="admissions-tab animate-slide-up">
+              <AdminAdmissions user={user} profile={profile} />
             </div>
           ) : activeTab === 'candidates' ? (
             <div className="candidates-tab animate-slide-up">

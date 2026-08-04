@@ -61,6 +61,16 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
   const [signatureBlob, setSignatureBlob] = useState(null);
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [showCamera, setShowCamera] = useState(false);
+  const [videoStream, setVideoStream] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTimer, setRecordingTimer] = useState(0);
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState(null);
+
+  const videoRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const timerRef = useRef(null);
+
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -72,7 +82,6 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
-  const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const navigate = useNavigate();
 
@@ -240,28 +249,97 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
     setShowCamera(true);
     setError('');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setVideoStream(stream);
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
-      setError('Could not access camera: ' + err.message);
+      setError('Could not access camera or microphone: ' + err.message);
       setShowCamera(false);
     }
   };
 
-  const capturePhoto = () => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (canvas && video) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0);
-      canvas.toBlob((blob) => {
-        setProfilePhoto(blob);
-        const stream = video.srcObject;
-        if (stream) stream.getTracks().forEach(track => track.stop());
-        setShowCamera(false);
-      }, 'image/jpeg', 0.8);
+  const stopCamera = () => {
+    if (videoStream) {
+      videoStream.getTracks().forEach(track => track.stop());
+      setVideoStream(null);
     }
+    setShowCamera(false);
+  };
+
+  const startRecording = () => {
+    if (!videoStream) return;
+    recordedChunksRef.current = [];
+
+    try {
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+        ? 'video/webm;codecs=vp9,opus'
+        : MediaRecorder.isTypeSupported('video/webm')
+        ? 'video/webm'
+        : 'video/mp4';
+
+      const mediaRecorder = new MediaRecorder(videoStream, { 
+        mimeType,
+        videoBitsPerSecond: 25000000 // High-definition video recording bitrate
+      });
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+        
+        // 500 MB Maximum File Size Check
+        const maxSizeBytes = 500 * 1024 * 1024; // 500 MB
+        if (blob.size > maxSizeBytes) {
+          setError('Recorded video exceeds the maximum 500 MB limit. Please record a shorter statement.');
+          stopCamera();
+          return;
+        }
+
+        const videoUrl = URL.createObjectURL(blob);
+        setProfilePhoto(blob);
+        setRecordedVideoUrl(videoUrl);
+        stopCamera();
+      };
+
+      mediaRecorder.start(1000);
+      setIsRecording(true);
+      setRecordingTimer(0);
+      timerRef.current = setInterval(() => {
+        setRecordingTimer(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error('Error starting video recording:', err);
+      setError('Failed to start video recording.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  };
+
+  const retakeVideo = () => {
+    setProfilePhoto(null);
+    setRecordedVideoUrl(null);
+    setRecordingTimer(0);
+    startCamera();
+  };
+
+  const formatTimer = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const processFile = async (file) => {
@@ -568,35 +646,124 @@ Submitted via Elitetoolistic Exam Portal`
               </div>
             )}
             
-            <div className="flex flex-col items-center gap-6 p-8 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 group transition-all hover:border-primary-300">
-              <div className="text-center">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Livestream Verification</p>
-                <p className="text-xs font-bold text-slate-600">Take a high-quality profile photo *</p>
+            <div className="bg-slate-50/70 border border-slate-100 rounded-3xl p-6 md:p-8 text-center space-y-6">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 block">Livestream Verification</span>
+              
+              <div className="flex flex-col items-center justify-center">
+                
+                {/* Camera Active View */}
+                {showCamera && (
+                  <div className="relative max-w-md w-full h-64 bg-slate-950 rounded-3xl overflow-hidden shadow-2xl mb-4 border border-slate-800">
+                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
+                    
+                    {isRecording && (
+                      <div className="absolute top-4 left-4 bg-rose-600/90 text-white font-bold text-[11px] px-3 py-1 rounded-full flex items-center gap-2 animate-pulse shadow-lg backdrop-blur-md">
+                        <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+                        REC {formatTimer(recordingTimer)}
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                      {!isRecording ? (
+                        <button 
+                          type="button" 
+                          onClick={startRecording} 
+                          className="bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] uppercase tracking-widest px-8 py-3 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                        >
+                          <span className="w-3 h-3 rounded-full bg-white"></span>
+                          Start Recording
+                        </button>
+                      ) : (
+                        <button 
+                          type="button" 
+                          onClick={stopRecording} 
+                          className="bg-slate-900 hover:bg-slate-800 text-white font-black text-[11px] uppercase tracking-widest px-8 py-3 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                        >
+                          <span className="w-3 h-3 rounded-sm bg-rose-500"></span>
+                          Stop Recording
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recorded Video Playback View */}
+                {recordedVideoUrl && !showCamera && (
+                  <div className="relative max-w-md w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 mb-4 bg-slate-950">
+                    <video src={recordedVideoUrl} controls className="w-full h-64 object-cover rounded-3xl"></video>
+                    
+                    <div className="p-3 bg-white border-t border-slate-100 flex justify-center">
+                      <button 
+                        type="button" 
+                        onClick={retakeVideo} 
+                        className="bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest px-6 py-2.5 rounded-full shadow-md hover:bg-slate-800 transition-all flex items-center gap-2"
+                      >
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                        Retake Video
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Initial Camera Lens Trigger */}
+                {!showCamera && !recordedVideoUrl && (
+                  <div className="flex flex-col items-center gap-3">
+                    <button 
+                      type="button" 
+                      onClick={startCamera} 
+                      className="w-16 h-16 rounded-full bg-white border border-indigo-100 shadow-md hover:shadow-xl hover:scale-105 text-indigo-600 flex items-center justify-center transition-all group"
+                    >
+                      <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.039l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/></svg>
+                    </button>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">Open Lens</span>
+                  </div>
+                )}
+
               </div>
 
-              {!showCamera && !profilePhoto && (
-                <button type="button" onClick={startCamera} className="w-32 h-32 rounded-full flex flex-col items-center justify-center cursor-pointer transition-all border-4 border-white bg-white shadow-xl hover:scale-105 gap-2 group-hover:shadow-primary-500/10">
-                  <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+              {/* DUAL READ-ALOUD SCRIPTS (ENGLISH & HINDI) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 text-left">
+                
+                {/* English Script */}
+                <div className="space-y-3">
+                  <h4 className="font-black text-slate-900 uppercase tracking-wider text-[10px] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                    PLEASE READ ALOUD (ENGLISH):
+                  </h4>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-100 text-slate-600 font-medium space-y-2 text-[11px] leading-relaxed shadow-sm">
+                    <p>
+                      "My name is <strong>{profile?.full_name || '[Candidate Name]'}</strong> and my registered email address is <strong>{emailValue || user?.email || '[Candidate Email]'}</strong>. I voluntarily recorded this video statement to verify my profile, confirm my identity, and acknowledge my enrollment in Elite Toolistic's professional training program (available at elitetoolistic.com)."
+                    </p>
+                    <p>
+                      "I purchased this course for personal skill enhancement, professional development, and career growth. I fully accept and understand that Elite Toolistic is only an educational skills-based course training provider and never offers a job promise, job placement assurance, or particular career assurances upon course completion."
+                    </p>
+                    <p>
+                      "Furthermore, I certify that I will not file any chargebacks or complaints regarding this transaction in the future. I also promise not to share or distribute any copyrighted course materials supplied to me throughout this program. This statement is made freely, knowingly, and without pressure."
+                    </p>
                   </div>
-                  <span className="text-[10px] font-black text-primary-600 uppercase tracking-widest">Open Lens</span>
-                </button>
-              )}
-
-              {showCamera && (
-                <div className="relative w-full max-w-sm">
-                  <video ref={videoRef} autoPlay playsInline className="w-full rounded-2xl border-4 border-white shadow-2xl bg-black" />
-                  <button type="button" onClick={capturePhoto} className="absolute bottom-4 left-1/2 -translate-x-1/2 py-3 px-8 rounded-full font-black text-xs bg-slate-900 text-white shadow-2xl hover:bg-slate-800 transition-all uppercase tracking-widest">Capture Now</button>
                 </div>
-              )}
 
-              {profilePhoto && !showCamera && (
-                <div className="relative">
-                  <img src={URL.createObjectURL(profilePhoto)} alt="Candidate" className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-2xl" />
-                  <button type="button" onClick={startCamera} className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center text-xs hover:rotate-180 transition-all duration-500 shadow-xl">🔄</button>
+                {/* Hindi Script */}
+                <div className="space-y-3">
+                  <h4 className="font-black text-slate-900 uppercase tracking-wider text-[10px] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    कृपया ज़ोर से पढ़ें (HINDI):
+                  </h4>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-100 text-slate-600 font-medium space-y-2 text-[11px] leading-relaxed shadow-sm">
+                    <p>
+                      "मेरा नाम <strong>{profile?.full_name || '[Candidate Name]'}</strong> है और मेरा रजिस्टर्ड ईमेल एड्रेस <strong>{emailValue || user?.email || '[Candidate Email]'}</strong> है। मैंने अपनी प्रोफाइल को वेरीफाई करने, अपनी पहचान कन्फर्म करने और Elite Toolistic के प्रोफेशनल ट्रेनिंग प्रोग्राम (जो elitetoolistic.com पर उपलब्ध है) में अपने एनरोलमेंट को स्वीकार करने के लिए स्वेच्छा से यह वीडियो स्टेटमेंट रिकॉर्ड किया है।"
+                    </p>
+                    <p>
+                      "मैंने यह कोर्स अपनी पर्सनल स्किल्स को बेहतर बनाने, प्रोफेशनल डेवलपमेंट और करियर में आगे बढ़ने के लिए खरीदा है। मैं पूरी तरह से स्वीकार करता हूँ और समझता हूँ कि Elite Toolistic केवल एक एजुकेशनल स्किल-बेस्ड कोर्स ट्रेनिंग प्रोवाइडर है और कोर्स पूरा होने पर कभी भी नौकरी का वादा, नौकरी मिलने की गारंटी या किसी खास करियर की गारंटी नहीं देता है।"
+                    </p>
+                    <p>
+                      "इसके अलावा, मैं यह सर्टिफाई करता हूँ कि मैं भविष्य में इस ट्रांजैक्शन के संबंध में कोई चार्जबैक या शिकायत नहीं करूँगा। मैं यह भी वादा करता हूँ कि इस प्रोग्राम के दौरान मुझे दिए गए किसी भी कॉपीराइटेड कोर्स मटेरियल को शेयर या डिस्ट्रीब्यूट नहीं करूँगा। यह स्टेटमेंट बिना किसी दबाव के, पूरी जानकारी के साथ और अपनी मर्जी से दिया जा रहा है।"
+                    </p>
+                  </div>
                 </div>
-              )}
-              <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+              </div>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

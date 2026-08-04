@@ -25,6 +25,14 @@ BEGIN
     DROP POLICY IF EXISTS "Public Access" ON storage.objects;
     DROP POLICY IF EXISTS "Authenticated Upload" ON storage.objects;
     DROP POLICY IF EXISTS "Owner Access" ON storage.objects;
+    DROP POLICY IF EXISTS "Public Storage Select" ON storage.objects;
+    DROP POLICY IF EXISTS "Public Storage Upload" ON storage.objects;
+    DROP POLICY IF EXISTS "Public Storage Update" ON storage.objects;
+    DROP POLICY IF EXISTS "Public Storage Delete" ON storage.objects;
+    DROP POLICY IF EXISTS "Public insert admissions" ON public.admissions;
+    DROP POLICY IF EXISTS "Public select admissions" ON public.admissions;
+    DROP POLICY IF EXISTS "Public update admissions" ON public.admissions;
+    DROP POLICY IF EXISTS "Public delete admissions" ON public.admissions;
 EXCEPTION WHEN others THEN NULL;
 END $$;
 
@@ -44,6 +52,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   pan_url text,
   signature_url text,
   profile_photo_url text,
+  video_url text,
   profile_completed boolean default false,
   disclaimer_accepted boolean default false,
   role text check (role in ('admin', 'candidate')),
@@ -59,9 +68,39 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS aadhaar_back_url text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS pan_url text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS signature_url text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS video_url text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_completed boolean DEFAULT false;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS disclaimer_accepted boolean DEFAULT false;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_exam_locked boolean DEFAULT false;
+
+-- ADMISSIONS TABLE
+CREATE TABLE IF NOT EXISTS public.admissions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  full_name text NOT NULL,
+  email text NOT NULL,
+  phone text NOT NULL,
+  course_name text NOT NULL,
+  pincode text,
+  state text,
+  city text,
+  address text,
+  aadhaar_front_url text,
+  aadhaar_back_url text,
+  pan_url text,
+  signature_url text,
+  profile_photo_url text,
+  video_url text,
+  ip_address text,
+  status text CHECK (status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending',
+  remarks text
+);
+
+ALTER TABLE public.admissions ADD COLUMN IF NOT EXISTS video_url text;
+ALTER TABLE public.admissions ADD COLUMN IF NOT EXISTS profile_photo_url text;
+ALTER TABLE public.admissions ADD COLUMN IF NOT EXISTS remarks text;
+ALTER TABLE public.admissions ADD COLUMN IF NOT EXISTS ip_address text;
+
 
 -- EXAMS TABLE
 CREATE TABLE IF NOT EXISTS public.exams (
@@ -109,6 +148,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.exams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admissions ENABLE ROW LEVEL SECURITY;
 
 -- ────────────────────────────────────────────
 -- STEP 4: HELPER FUNCTION (needed by all RLS)
@@ -127,6 +167,12 @@ CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR 
 CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Service role can insert profiles" ON public.profiles FOR INSERT WITH CHECK (true);
 
+-- ADMISSIONS
+CREATE POLICY "Public insert admissions" ON public.admissions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public select admissions" ON public.admissions FOR SELECT USING (true);
+CREATE POLICY "Public update admissions" ON public.admissions FOR UPDATE USING (true);
+CREATE POLICY "Public delete admissions" ON public.admissions FOR DELETE USING (true);
+
 -- EXAMS
 CREATE POLICY "Anyone can view exams" ON public.exams FOR SELECT USING (true);
 CREATE POLICY "Admins can manage exams" ON public.exams FOR ALL USING (public.get_user_role() = 'admin');
@@ -141,15 +187,25 @@ CREATE POLICY "Users can view their own submissions" ON public.submissions FOR S
 CREATE POLICY "Admins can manage submissions" ON public.submissions FOR ALL USING (public.get_user_role() = 'admin');
 
 -- ────────────────────────────────────────────
--- STEP 6: STORAGE BUCKET
+-- STEP 6: STORAGE BUCKETS & POLICIES
 -- ────────────────────────────────────────────
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('aadhaar_cards', 'aadhaar_cards', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
-CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'aadhaar_cards');
-CREATE POLICY "Authenticated Upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'aadhaar_cards');
-CREATE POLICY "Owner Access" ON storage.objects FOR ALL TO authenticated USING (bucket_id = 'aadhaar_cards');
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('admissions', 'admissions', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('videos', 'videos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+CREATE POLICY "Public Storage Select" ON storage.objects FOR SELECT USING (bucket_id IN ('aadhaar_cards', 'admissions', 'videos'));
+CREATE POLICY "Public Storage Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id IN ('aadhaar_cards', 'admissions', 'videos'));
+CREATE POLICY "Public Storage Update" ON storage.objects FOR UPDATE USING (bucket_id IN ('aadhaar_cards', 'admissions', 'videos'));
+CREATE POLICY "Public Storage Delete" ON storage.objects FOR DELETE USING (bucket_id IN ('aadhaar_cards', 'admissions', 'videos'));
+
 
 -- ────────────────────────────────────────────
 -- STEP 7: RPC FUNCTIONS
