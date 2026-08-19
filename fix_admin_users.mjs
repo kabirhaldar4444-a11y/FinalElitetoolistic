@@ -24,7 +24,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 const adminUsers = [
   { email: 'info@elitetoolistic.com', password: 'qwerty@123', role: 'admin', full_name: 'Super Admin' },
-  { email: 'staffadmin@gmail.com',    password: 'ABC123',      role: 'admin', full_name: 'Staff Admin' },
+  { email: 'staffadmin@gmail.com',    password: 'elite2567',   role: 'admin', full_name: 'Staff Admin' },
 ];
 
 async function upsertUser({ email, password, role, full_name }) {

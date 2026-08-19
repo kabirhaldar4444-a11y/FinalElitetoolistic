@@ -65,8 +65,6 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTimer, setRecordingTimer] = useState(0);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState(null);
-  const [scriptLang, setScriptLang] = useState('hindi'); // 'english' | 'hindi' | 'marathi'
-
 
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -723,44 +721,16 @@ Submitted via Elitetoolistic Exam Portal`
 
               </div>
 
-              {/* TRI-LINGUAL READ-ALOUD SCRIPTS (ENGLISH, HINDI & MARATHI) */}
-              <div className="pt-4 text-left space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <h4 className="font-black text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-                    VERIFICATION STATEMENT SCRIPT (SELECT LANGUAGE TO READ ALOUD):
-                  </h4>
-                  
-                  {/* Language Switcher Tabs */}
-                  <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => setScriptLang('english')}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${scriptLang === 'english' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-                    >
-                      🇬🇧 English
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setScriptLang('hindi')}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${scriptLang === 'hindi' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-                    >
-                      🇮🇳 हिन्दी (Hindi)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setScriptLang('marathi')}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${scriptLang === 'marathi' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-                    >
-                      🚩 मराठी (Marathi)
-                    </button>
-                  </div>
-                </div>
-
+              {/* DUAL READ-ALOUD SCRIPTS (ENGLISH & HINDI) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 text-left">
+                
                 {/* English Script */}
-                {scriptLang === 'english' && (
-                  <div className="bg-white p-4 rounded-2xl border border-indigo-100 text-slate-700 font-medium space-y-2.5 text-[11px] leading-relaxed shadow-sm animate-fade-in">
-                    <p className="font-bold text-indigo-600 text-[10px] uppercase tracking-wider">English Verification Statement:</p>
+                <div className="space-y-3">
+                  <h4 className="font-black text-slate-900 uppercase tracking-wider text-[10px] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                    PLEASE READ ALOUD (ENGLISH):
+                  </h4>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-100 text-slate-600 font-medium space-y-2 text-[11px] leading-relaxed shadow-sm">
                     <p>
                       "My name is <strong>{profile?.full_name || '[Candidate Name]'}</strong> and my registered email address is <strong>{emailValue || user?.email || '[Candidate Email]'}</strong>. I voluntarily recorded this video statement to verify my profile, confirm my identity, and acknowledge my enrollment in Elite Toolistic's professional training program (available at elitetoolistic.com)."
                     </p>
@@ -771,14 +741,17 @@ Submitted via Elitetoolistic Exam Portal`
                       "Furthermore, I certify that I will not file any chargebacks or complaints regarding this transaction in the future. I also promise not to share or distribute any copyrighted course materials supplied to me throughout this program. This statement is made freely, knowingly, and without pressure."
                     </p>
                   </div>
-                )}
+                </div>
 
                 {/* Hindi Script */}
-                {scriptLang === 'hindi' && (
-                  <div className="bg-white p-4 rounded-2xl border border-emerald-100 text-slate-700 font-medium space-y-2.5 text-[11px] leading-relaxed shadow-sm animate-fade-in">
-                    <p className="font-bold text-emerald-600 text-[10px] uppercase tracking-wider">हिन्दी सत्यापन वक्तव्य (Hindi Verification Statement):</p>
+                <div className="space-y-3">
+                  <h4 className="font-black text-slate-900 uppercase tracking-wider text-[10px] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    कृपया ज़ोर से पढ़ें (HINDI):
+                  </h4>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-100 text-slate-600 font-medium space-y-2 text-[11px] leading-relaxed shadow-sm">
                     <p>
-                      "मेरा नाम <strong>{profile?.full_name || '[कैंडिडेट का नाम]'}</strong> है और मेरा रजिस्टर्ड ईमेल एड्रेस <strong>{emailValue || user?.email || '[ईमेल एड्रेस]'}</strong> है। मैंने अपनी प्रोफाइल को वेरीफाई करने, अपनी पहचान कन्फर्म करने और Elite Toolistic के प्रोफेशनल ट्रेनिंग प्रोग्राम (जो elitetoolistic.com पर उपलब्ध है) में अपने एनरोलमेंट को स्वीकार करने के लिए स्वेच्छा से यह वीडियो स्टेटमेंट रिकॉर्ड किया है।"
+                      "मेरा नाम <strong>{profile?.full_name || '[Candidate Name]'}</strong> है और मेरा रजिस्टर्ड ईमेल एड्रेस <strong>{emailValue || user?.email || '[Candidate Email]'}</strong> है। मैंने अपनी प्रोफाइल को वेरीफाई करने, अपनी पहचान कन्फर्म करने और Elite Toolistic के प्रोफेशनल ट्रेनिंग प्रोग्राम (जो elitetoolistic.com पर उपलब्ध है) में अपने एनरोलमेंट को स्वीकार करने के लिए स्वेच्छा से यह वीडियो स्टेटमेंट रिकॉर्ड किया है।"
                     </p>
                     <p>
                       "मैंने यह कोर्स अपनी पर्सनल स्किल्स को बेहतर बनाने, प्रोफेशनल डेवलपमेंट और करियर में आगे बढ़ने के लिए खरीदा है। मैं पूरी तरह से स्वीकार करता हूँ और समझता हूँ कि Elite Toolistic केवल एक एजुकेशनल स्किल-बेस्ड कोर्स ट्रेनिंग प्रोवाइडर है और कोर्स पूरा होने पर कभी भी नौकरी का वादा, नौकरी मिलने की गारंटी या किसी खास करियर की गारंटी नहीं देता है।"
@@ -787,26 +760,9 @@ Submitted via Elitetoolistic Exam Portal`
                       "इसके अलावा, मैं यह सर्टिफाई करता हूँ कि मैं भविष्य में इस ट्रांजैक्शन के संबंध में कोई चार्जबैक या शिकायत नहीं करूँगा। मैं यह भी वादा करता हूँ कि इस प्रोग्राम के दौरान मुझे दिए गए किसी भी कॉपीराइटेड कोर्स मटेरियल को शेयर या डिस्ट्रीब्यूट नहीं करूँगा। यह स्टेटमेंट बिना किसी दबाव के, पूरी जानकारी के साथ और अपनी मर्जी से दिया जा रहा है।"
                     </p>
                   </div>
-                )}
-
-                {/* Marathi Script */}
-                {scriptLang === 'marathi' && (
-                  <div className="bg-white p-4 rounded-2xl border border-amber-100 text-slate-700 font-medium space-y-2.5 text-[11px] leading-relaxed shadow-sm animate-fade-in">
-                    <p className="font-bold text-amber-600 text-[10px] uppercase tracking-wider">मराठी पडताळणी विधान (Marathi Verification Statement):</p>
-                    <p>
-                      "माझे नाव <strong>{profile?.full_name || '[कँडिडेटचे नाव]'}</strong> आहे आणि माझा नोंदणीकृत ईमेल आयडी <strong>{emailValue || user?.email || '[ईमेल आयडी]'}</strong> आहे. मी माझे प्रोफाइल सत्यापित करण्यासाठी, माझी ओळख निश्चित करण्यासाठी आणि एलिट टूलिस्टिकच्या (elitetoolistic.com) व्यावसायिक प्रशिक्षण कार्यक्रमातील माझे प्रवेश निश्चित करण्यासाठी हा व्हिडिओ विधान स्वेच्छेने रेकॉर्ड केला आहे."
-                    </p>
-                    <p>
-                      "मी हा कोर्स माझ्या वैयक्तिक कौशल्यांचा विकास, व्यावसायिक प्रगती आणि करिअर वाढीसाठी खरेदी केला आहे. मी पूर्णपणे स्वीकारतो आणि समजतो की एलिट टूलिस्टिक ही केवळ एक शैक्षणिक कौशल्य-आधारित अभ्यासक्रम प्रशिक्षण संस्था आहे आणि कोर्स पूर्ण झाल्यावर नोकरीचे आश्वासन, नोकरीची हमी किंवा कोणत्याही विशिष्ट करिअरची हमी देत नाही."
-                    </p>
-                    <p>
-                      "शिवाय, मी प्रमाणित करतो की मी भविष्यात या व्यवहाराबाबत कोणतीही तक्रार किंवा चार्जबॅक करणार नाही. मी असाही शब्द देतो की या कार्यक्रमादरम्यान मला दिलेली कोणतीही कॉपीराइट केलेली अभ्यासक्रम साहित्य सामग्री शेअर किंवा वितरीत करणार नाही. हे विधान कोणत्याही दबावाशिवाय, संपूर्ण माहितीसह आणि माझ्या स्वतःच्या इच्छेने दिले जात आहे."
-                    </p>
-                  </div>
-                )}
+                </div>
 
               </div>
-
 
             </div>
 

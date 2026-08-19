@@ -10,8 +10,8 @@ const DisclaimerOverlay = ({ user, profile }) => {
   const userId = user?.id || profile?.id;
   const isSessionAccepted = sessionStorage.getItem(`disclaimer_accepted_${userId}`);
 
-  // Only show if not accepted in profile AND not accepted in current session
-  const showOverlay = !((profile?.disclaimer_accepted === true && profile?.profile_completed === true) || isSessionAccepted);
+  // Only show if not accepted in current session and profile is not completed
+  const showOverlay = !(profile?.profile_completed === true || isSessionAccepted);
 
   if (!showOverlay) {
     return null; 

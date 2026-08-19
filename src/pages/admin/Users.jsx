@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import supabase from '../../utils/supabase';
 import UserSubmissions from '../../components/admin/UserSubmissions';
 import CreateUser from '../../components/admin/CreateUser';
+import BulkUpload from '../../components/admin/BulkUpload';
+import BulkDelete from '../../components/admin/BulkDelete';
+import CandidateDashboard from '../../components/candidate/CandidateDashboard';
 import { useConfirm, useToast } from '../../components/common/AlertProvider';
 
 const Users = ({ user, profile: activeProfile }) => {
@@ -20,10 +23,13 @@ const Users = ({ user, profile: activeProfile }) => {
   const [roleSearchQuery, setRoleSearchQuery] = useState('');
   const [togglingId, setTogglingId] = useState(null);
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
   const navigate = useNavigate();
 
   // Super admin = master-level access (can manage other admins too)
   const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com' || user?.email === 'info@elitetoolistic.com';
+  const isStaffAdmin = user?.email === 'staffadmin@gmail.com';
   // Any admin (including staff) can see candidates
   const isAdmin = isSuperAdmin || activeProfile?.role === 'admin';
 
@@ -51,7 +57,7 @@ const Users = ({ user, profile: activeProfile }) => {
   };
 
   const fetchExams = async () => {
-    const { data } = await supabase.from('exams').select('id, title').order('title');
+    const { data } = await supabase.from('exams').select('id, title, duration').order('title');
     if (data) setExams(data);
   };
 
@@ -116,6 +122,21 @@ const Users = ({ user, profile: activeProfile }) => {
     }
   };
 
+  const handleViewCandidate = async (u) => {
+    if (isStaffAdmin) {
+      const { data } = await supabase
+        .from('admissions')
+        .select('ip_address')
+        .eq('email', u.email)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const ip = data?.[0]?.ip_address || 'Not available';
+      setSelectedUser({ ...u, ip_address: ip });
+    } else {
+      setSelectedUser(u);
+    }
+  };
+
   const filteredUsers = users.filter(u =>
     u.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -162,12 +183,30 @@ const Users = ({ user, profile: activeProfile }) => {
                 />
               </div>
             )}
-            <Link to="/admin/users/new">
-              <button className="bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-primary-600/20 hover:shadow-primary-600/40 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 whitespace-nowrap text-sm">
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
-                New User
-              </button>
-            </Link>
+            {!isStaffAdmin && (
+              <>
+                <button 
+                  onClick={() => setShowBulkDelete(true)}
+                  className="bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold py-3 px-6 rounded-full shadow-lg shadow-rose-600/20 hover:shadow-rose-600/40 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 whitespace-nowrap text-sm"
+                >
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  Bulk Delete
+                </button>
+                <button 
+                  onClick={() => setShowBulkUpload(true)}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 px-6 rounded-full shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/40 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 whitespace-nowrap text-sm"
+                >
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                  Import
+                </button>
+                <Link to="/admin/users/new">
+                  <button className="bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-full shadow-lg shadow-primary-600/20 hover:shadow-primary-600/40 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 whitespace-nowrap text-sm">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                    New User
+                  </button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -265,44 +304,50 @@ const Users = ({ user, profile: activeProfile }) => {
                     <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--glass-border)' }}>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => setSelectedUser(u)}
+                          onClick={() => handleViewCandidate(u)}
                           className="p-2.5 rounded-xl hover:text-blue-400 hover:bg-blue-400/10 transition-all duration-300"
                           style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-light)' }}
                           title="View Details"
                         >
                           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         </button>
-                        <button
-                          onClick={() => navigate(`/admin/users/edit/${u.id}`)}
-                          className="p-2.5 rounded-xl hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300"
-                          style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-light)' }}
-                          title="Edit"
-                        >
-                          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(u)}
-                          className="p-2.5 rounded-xl hover:text-rose-400 hover:bg-rose-400/10 transition-all duration-300"
-                          style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-light)' }}
-                          title="Delete User"
-                        >
-                          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        </button>
+                        {!isStaffAdmin && (
+                          <>
+                            <button
+                              onClick={() => navigate(`/admin/users/edit/${u.id}`)}
+                              className="p-2.5 rounded-xl hover:text-amber-400 hover:bg-amber-400/10 transition-all duration-300"
+                              style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-light)' }}
+                              title="Edit"
+                            >
+                              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(u)}
+                              className="p-2.5 rounded-xl hover:text-rose-400 hover:bg-rose-400/10 transition-all duration-300"
+                              style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-light)' }}
+                              title="Delete User"
+                            >
+                              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                          </>
+                        )}
                       </div>
 
-                      <button
-                        onClick={() => handleToggleExamLock(u)}
-                        className={`p-2.5 rounded-xl transition-all duration-300 ${u.is_exam_locked ? 'bg-rose-500/10 text-rose-400' : 'bg-primary-500/10 text-primary-400'}`}
-                        title={u.is_exam_locked ? 'Unlock Access' : 'Lock Access'}
-                      >
-                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                          {u.is_exam_locked ? (
-                            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                          ) : (
-                            <path d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
-                          )}
-                        </svg>
-                      </button>
+                      {!isStaffAdmin && (
+                        <button
+                          onClick={() => handleToggleExamLock(u)}
+                          className={`p-2.5 rounded-xl transition-all duration-300 ${u.is_exam_locked ? 'bg-rose-500/10 text-rose-400' : 'bg-primary-500/10 text-primary-400'}`}
+                          title={u.is_exam_locked ? 'Unlock Access' : 'Lock Access'}
+                        >
+                          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            {u.is_exam_locked ? (
+                              <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            ) : (
+                              <path d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                            )}
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -505,16 +550,33 @@ const Users = ({ user, profile: activeProfile }) => {
 
       {/* ── DETAIL MODAL ── */}
       {selectedUser && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-10 backdrop-blur-xl animate-fade-in bg-black/60">
-          <div className="w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--glass-border)' }}>
+        isStaffAdmin ? (
+          <div className="fixed inset-0 z-[2000] overflow-y-auto bg-black/80 backdrop-blur-xl animate-fade-in p-4 md:p-10">
+            <div className="flex justify-end max-w-7xl mx-auto mb-4 relative z-50">
+              <button onClick={() => setSelectedUser(null)} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full font-bold backdrop-blur-md border border-white/20 transition-all">Close Profile View</button>
+            </div>
+            <div className="w-full max-w-7xl mx-auto rounded-[2.5rem] shadow-2xl overflow-hidden relative mb-8" style={{ background: 'var(--bg-gradient)', border: '1px solid var(--glass-border)' }}>
+              <CandidateDashboard exams={exams} profile={selectedUser} user={user} isStaffView={true} />
+            </div>
+            <div className="w-full max-w-7xl mx-auto rounded-[2.5rem] shadow-2xl overflow-hidden relative" style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)' }}>
+              <div className="p-8 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+                 <h2 className="text-2xl font-black text-[color:var(--text-dark)]">Staff Admin Assessment View</h2>
+                 <p className="text-sm text-[color:var(--text-light)]">Detailed tabular view of assigned subjects and marks.</p>
+              </div>
+              <UserSubmissions userId={selectedUser.id} isReadOnly={true} />
+            </div>
+          </div>
+        ) : (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-10 backdrop-blur-xl animate-fade-in bg-black/60">
+            <div className="w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--glass-border)' }}>
 
-            {/* ── STICKY HEADER (always visible) ── */}
-            <div className="flex items-center justify-between px-8 py-5 shrink-0 border-b" style={{ borderColor: 'var(--glass-border)' }}>
-              <div className="flex items-center gap-4">
-                <div className="relative shrink-0">
-                  <div className="absolute -inset-1 bg-gradient-to-tr from-primary-500 to-purple-600 rounded-xl blur opacity-30"></div>
-                  <img
-                    src={selectedUser.profile_photo_url || 'https://via.placeholder.com/200'}
+              {/* ── STICKY HEADER (always visible) ── */}
+              <div className="flex items-center justify-between px-8 py-5 shrink-0 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+                <div className="flex items-center gap-4">
+                  <div className="relative shrink-0">
+                    <div className="absolute -inset-1 bg-gradient-to-tr from-primary-500 to-purple-600 rounded-xl blur opacity-30"></div>
+                    <img
+                      src={selectedUser.profile_photo_url || 'https://via.placeholder.com/200'}
                     alt=""
                     className="relative w-12 h-12 rounded-xl object-cover border-2"
                     style={{ borderColor: 'var(--glass-border)' }}
@@ -709,9 +771,10 @@ const Users = ({ user, profile: activeProfile }) => {
               </button>
             </div>
 
-            </div>{/* end scrollable body */}
+              </div>{/* end scrollable body */}
+            </div>
           </div>
-        </div>
+        )
       )}
 
       {/* ── DOCUMENT VIEWER MODAL ── */}
@@ -788,6 +851,28 @@ const Users = ({ user, profile: activeProfile }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── BULK UPLOAD MODAL ── */}
+      {showBulkUpload && (
+        <BulkUpload 
+          onClose={() => setShowBulkUpload(false)}
+          onComplete={() => {
+            setShowBulkUpload(false);
+            fetchUsers();
+          }}
+        />
+      )}
+
+      {/* ── BULK DELETE MODAL ── */}
+      {showBulkDelete && (
+        <BulkDelete 
+          onClose={() => setShowBulkDelete(false)}
+          onComplete={() => {
+            setShowBulkDelete(false);
+            fetchUsers();
+          }}
+        />
       )}
     </div>
   );

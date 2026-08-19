@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import supabase from '../../utils/supabase';
 import DisclaimerOverlay from '../DisclaimerOverlay';
 
-const CandidateDashboard = ({ exams, onStartExam, profile, user }) => {
+const CandidateDashboard = ({ exams, onStartExam, profile, user, isStaffView }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loadingResults, setLoadingResults] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,22 +64,41 @@ const CandidateDashboard = ({ exams, onStartExam, profile, user }) => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 border-b pb-8" style={{ borderColor: 'var(--glass-border)' }}>
           <div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-clip-text text-transparent mb-2" style={{ backgroundImage: 'linear-gradient(to right, var(--text-dark), var(--text-light))' }}>
-              My Assessments
+              {isStaffView ? 'Candidate Assessment View' : 'My Assessments'}
             </h1>
-            <p className="text-lg font-medium text-[color:var(--text-light)]">
-              Welcome back, <span className="font-bold text-primary-500">{profile?.full_name || 'Candidate'}</span>
-            </p>
+            {isStaffView ? (
+              <div className="flex items-center gap-4 mt-4 bg-white/5 p-4 rounded-2xl border border-white/10 shadow-sm backdrop-blur-md">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-800 border-2 border-primary-500/30 flex items-center justify-center">
+                   {profile?.profile_photo_url ? (
+                     <img src={profile.profile_photo_url} alt="Profile" className="w-full h-full object-cover" />
+                   ) : (
+                     <span className="text-2xl text-slate-500">{profile?.full_name?.charAt(0) || 'U'}</span>
+                   )}
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-[color:var(--text-dark)] leading-tight">{profile?.full_name}</p>
+                  <p className="text-sm text-[color:var(--text-light)]">{profile?.email}</p>
+                  <p className="text-sm font-medium text-primary-400">IP: {profile?.ip_address || 'Not available'}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-lg font-medium text-[color:var(--text-light)]">
+                Welcome back, <span className="font-bold text-primary-500">{profile?.full_name || 'Candidate'}</span>
+              </p>
+            )}
           </div>
-          <div className="glass-effect px-6 py-3 rounded-full flex items-center gap-3 border shadow-sm" style={{ backgroundColor: 'var(--input-bg)' }}>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-light)]">Status</span>
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-              </span>
-              <span className="text-emerald-500 font-bold text-sm">Verified Profile</span>
+          {!isStaffView && (
+            <div className="glass-effect px-6 py-3 rounded-full flex items-center gap-3 border shadow-sm" style={{ backgroundColor: 'var(--input-bg)' }}>
+              <span className="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-light)]">Status</span>
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span className="text-emerald-500 font-bold text-sm">Verified Profile</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Available Exams Section */}
@@ -155,15 +174,20 @@ const CandidateDashboard = ({ exams, onStartExam, profile, user }) => {
                   </div>
                   
                   <button 
-                    onClick={() => !profile?.is_exam_locked && onStartExam(exam)} 
-                    disabled={profile?.is_exam_locked}
+                    onClick={() => !profile?.is_exam_locked && !isStaffView && onStartExam(exam)} 
+                    disabled={profile?.is_exam_locked || isStaffView}
                     className={`w-full py-4 px-6 rounded-2xl font-black tracking-wide flex items-center justify-center gap-2 transition-all duration-300 ${
-                      profile?.is_exam_locked 
+                      profile?.is_exam_locked || isStaffView
                         ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed border-2 border-slate-400/20' 
                         : 'bg-primary-600 hover:bg-primary-500 text-white shadow-xl shadow-primary-600/30 hover:scale-[1.02] active:scale-95'
                     }`}
                   >
-                    {profile?.is_exam_locked ? (
+                    {isStaffView ? (
+                      <>
+                        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        View Only
+                      </>
+                    ) : profile?.is_exam_locked ? (
                       <>
                         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         Access Locked By Admin
@@ -207,10 +231,7 @@ const CandidateDashboard = ({ exams, onStartExam, profile, user }) => {
                   }`}
                   style={{ animationDelay: `${(i % 10) * 100}ms` }}
                 >
-                  <h4 className="text-xl font-bold text-[color:var(--text-dark)] mb-2 line-clamp-2">{sub.exams?.title}</h4>
-                  <p className="text-sm font-medium text-[color:var(--text-light)] mb-8">
-                    Submitted: {new Date(sub.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric'})}
-                  </p>
+                  <h4 className="text-xl font-bold text-[color:var(--text-dark)] mb-8 line-clamp-2">{sub.exams?.title}</h4>
                   
                   <div className="mt-auto p-5 rounded-2xl border" style={{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--input-border)' }}>
                     <div className="flex items-end justify-between">
@@ -236,7 +257,6 @@ const CandidateDashboard = ({ exams, onStartExam, profile, user }) => {
                           <p className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--text-light)] mb-1">Final Score</p>
                           <p className="text-3xl font-black tracking-tight text-primary-500">
                             {sub.admin_score_override !== null ? sub.admin_score_override : sub.score}
-                            <span className="text-sm font-bold text-slate-400 ml-1">/{sub.total_questions * 5}</span>
                           </p>
                         </div>
                       )}
