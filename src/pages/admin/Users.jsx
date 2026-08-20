@@ -50,9 +50,23 @@ const Users = ({ user, profile: activeProfile }) => {
       query = query.eq('role', 'candidate');
     }
 
-    const { data, error } = await query;
-    if (error) console.error('fetchUsers error:', error.message);
-    if (data) setUsers(data);
+    const [usersResponse, submissionsResponse] = await Promise.all([
+      query,
+      supabase.from('submissions').select('user_id')
+    ]);
+
+    const { data: usersData, error: usersError } = usersResponse;
+    const { data: submissionsData } = submissionsResponse;
+
+    if (usersError) console.error('fetchUsers error:', usersError.message);
+    
+    if (usersData) {
+      const usersWithCounts = usersData.map(u => {
+        const completedCount = submissionsData ? submissionsData.filter(s => s.user_id === u.id).length : 0;
+        return { ...u, completed_courses_count: completedCount };
+      });
+      setUsers(usersWithCounts);
+    }
     setLoading(false);
   };
 
@@ -291,7 +305,7 @@ const Users = ({ user, profile: activeProfile }) => {
                         </div>
                       ) : (
                         <div className="px-3 py-1 bg-primary-500/10 border border-primary-500/20 rounded-full text-[10px] font-black uppercase tracking-tighter text-primary-400">
-                          {u.allotted_exam_ids?.length || 0} Assignments
+                          {u.completed_courses_count || 0} Courses Completed
                         </div>
                       )}
                       {u.is_exam_locked && (

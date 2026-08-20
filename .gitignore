@@ -40,3 +40,6 @@ dist-ssr
 .windsurf
 
 .vercel
+
+# Local SQLite Database
+sqlite.db
