@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import supabase from '../../utils/supabase';
 import DisclaimerOverlay from '../DisclaimerOverlay';
 
@@ -51,6 +52,11 @@ const CandidateDashboard = ({ exams, onStartExam, profile, user, isStaffView }) 
     e.title?.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
 
+  const isKycCompleted = !!(
+    profile?.profile_completed ||
+    (profile?.profile_photo_url && profile?.aadhaar_front_url && profile?.aadhaar_back_url)
+  );
+
   return (
     <>
     <DisclaimerOverlay user={user} profile={profile} />
@@ -88,16 +94,28 @@ const CandidateDashboard = ({ exams, onStartExam, profile, user, isStaffView }) 
             )}
           </div>
           {!isStaffView && (
-            <div className="glass-effect px-6 py-3 rounded-full flex items-center gap-3 border shadow-sm" style={{ backgroundColor: 'var(--input-bg)' }}>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-light)]">Status</span>
+            <Link to="/servicedelivery" className="glass-effect px-6 py-3 rounded-full flex items-center gap-3 border shadow-sm hover:scale-105 transition-all" style={{ backgroundColor: 'var(--input-bg)' }}>
+              <span className="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-light)]">KYC Status</span>
               <div className="flex items-center gap-2">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                </span>
-                <span className="text-emerald-500 font-bold text-sm">Verified Profile</span>
+                {isKycCompleted ? (
+                  <>
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-emerald-500 font-bold text-sm">KYC Completed</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                    </span>
+                    <span className="text-amber-500 font-bold text-sm">Pending Verification</span>
+                  </>
+                )}
               </div>
-            </div>
+            </Link>
           )}
         </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import supabase from '../../utils/supabase';
 import UserSubmissions from '../../components/admin/UserSubmissions';
 import CreateUser from '../../components/admin/CreateUser';
@@ -325,6 +326,18 @@ const Users = ({ user, profile: activeProfile }) => {
                         >
                           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         </button>
+                        {u.role === 'candidate' && (
+                          <button
+                            onClick={() => navigate(`/admin/users/servicedelivery/${u.id}`)}
+                            className="p-2.5 rounded-xl hover:text-emerald-400 hover:bg-emerald-400/10 transition-all duration-300"
+                            style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-light)' }}
+                            title="Service Delivery Tracker"
+                          >
+                            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                          </button>
+                        )}
                         {!isStaffAdmin && (
                           <>
                             <button
@@ -526,7 +539,7 @@ const Users = ({ user, profile: activeProfile }) => {
       </div>
 
       {/* ── CREATE ADMIN MODAL ── */}
-      {showCreateAdmin && (
+      {showCreateAdmin && createPortal(
         <div
           className="fixed inset-0 z-[3000] flex items-center justify-center p-4 backdrop-blur-xl animate-fade-in bg-black/60 overflow-y-auto"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCreateAdmin(false); }}
@@ -558,12 +571,13 @@ const Users = ({ user, profile: activeProfile }) => {
               <CreateUser user={user} profile={activeProfile} initialRole="admin" />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
 
       {/* ── DETAIL MODAL ── */}
-      {selectedUser && (
+      {selectedUser && createPortal(
         isStaffAdmin ? (
           <div className="fixed inset-0 z-[2000] overflow-y-auto bg-black/80 backdrop-blur-xl animate-fade-in p-4 md:p-10">
             <div className="flex justify-end max-w-7xl mx-auto mb-4 relative z-50">
@@ -788,11 +802,12 @@ const Users = ({ user, profile: activeProfile }) => {
               </div>{/* end scrollable body */}
             </div>
           </div>
-        )
+        ),
+        document.body
       )}
 
       {/* ── DOCUMENT VIEWER MODAL ── */}
-      {docViewUrl && (
+      {docViewUrl && createPortal(
         <div
           className="fixed inset-0 z-[4000] flex items-center justify-center p-4 backdrop-blur-xl animate-fade-in bg-black/80"
           onClick={(e) => { if (e.target === e.currentTarget) setDocViewUrl(null); }}
@@ -864,7 +879,8 @@ const Users = ({ user, profile: activeProfile }) => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── BULK UPLOAD MODAL ── */}

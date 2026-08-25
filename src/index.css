@@ -234,3 +234,18 @@ select {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
 }
+
+/* Custom Scrollbar Thin Utility */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}

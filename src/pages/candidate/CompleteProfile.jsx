@@ -45,6 +45,29 @@ const INDIA_STATES_CITIES = {
 
 const STATES = Object.keys(INDIA_STATES_CITIES).sort();
 
+// Helper to capture a frame from an HTMLVideoElement
+const captureProfilePic = (videoEl) => {
+  if (!videoEl) return null;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = videoEl.videoWidth || 640;
+    canvas.height = videoEl.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    // Mirror drawing since webcam is mirrored
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/jpeg', 0.85);
+    });
+  } catch (err) {
+    console.error('Failed to capture frame:', err);
+    return null;
+  }
+};
+
 const CompleteProfile = ({ profile, user, onComplete }) => {
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState('');
@@ -59,12 +82,14 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
   const [aadhaarBack, setAadhaarBack] = useState(null);
   const [panCard, setPanCard] = useState(null);
   const [signatureBlob, setSignatureBlob] = useState(null);
-  const [profilePhoto, setProfilePhoto] = useState(null);
   const [showCamera, setShowCamera] = useState(false);
   const [videoStream, setVideoStream] = useState(null);
+  const [profilePhoto, setProfilePhoto] = useState(null); // stores the captured static photo blob
+  const [recordedVideoBlob, setRecordedVideoBlob] = useState(null); // stores the recorded video blob
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState(null);
+  const [capturedPhotoUrl, setCapturedPhotoUrl] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTimer, setRecordingTimer] = useState(0);
-  const [recordedVideoUrl, setRecordedVideoUrl] = useState(null);
 
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -301,7 +326,7 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
         }
 
         const videoUrl = URL.createObjectURL(blob);
-        setProfilePhoto(blob);
+        setRecordedVideoBlob(blob);
         setRecordedVideoUrl(videoUrl);
         stopCamera();
       };
@@ -311,6 +336,17 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
       setRecordingTimer(0);
       timerRef.current = setInterval(() => {
         setRecordingTimer(prev => prev + 1);
+      }, 1000);
+
+      // Capture profile photo snapshot from video stream after 1 second
+      setTimeout(async () => {
+        if (videoRef.current) {
+          const photoBlob = await captureProfilePic(videoRef.current);
+          if (photoBlob) {
+            setProfilePhoto(photoBlob);
+            setCapturedPhotoUrl(URL.createObjectURL(photoBlob));
+          }
+        }
       }, 1000);
     } catch (err) {
       console.error('Error starting video recording:', err);
@@ -331,7 +367,9 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
 
   const retakeVideo = () => {
     setProfilePhoto(null);
+    setRecordedVideoBlob(null);
     setRecordedVideoUrl(null);
+    setCapturedPhotoUrl(null);
     setRecordingTimer(0);
     startCamera();
   };
@@ -465,6 +503,7 @@ ACCEPTED BY CANDIDATE: YES ✓
 DOCUMENT ACCESS LINKS:
 ─────────────────────
 • Profile Photo: ${candidateData.photoUrl}
+• Live Video Statement: ${candidateData.videoUrl || 'N/A'}
 • Aadhaar Card (Front): ${candidateData.frontUrl}
 • Aadhaar Card (Back): ${candidateData.backUrl}
 • PAN Card: ${candidateData.panUrl}
@@ -483,7 +522,7 @@ Submitted via Elitetoolistic Exam Portal`
     e.preventDefault();
     setError('');
     
-    if (!profilePhoto) return setError('Please click your photo to continue.');
+    if (!profilePhoto || !recordedVideoBlob) return setError('Please record your live video statement.');
     if (!signatureBlob) return setError('Please provide your digital signature.');
     if (!aadhaarFront) return setError('Please upload Aadhaar Card (Front).');
     if (!aadhaarBack) return setError('Please upload Aadhaar Card (Back).');
@@ -512,8 +551,9 @@ Submitted via Elitetoolistic Exam Portal`
       setUploadStatus('Securing identity files...');
 
       // 2. Parallel Upload
-      const [photoUrl, frontUrl, backUrl, panUrl, signUrl] = await Promise.all([
+      const [photoUrl, videoUrl, frontUrl, backUrl, panUrl, signUrl] = await Promise.all([
         handleFileUpload(compPhoto, 'profile-photo'),
+        handleFileUpload(recordedVideoBlob, 'profile-video'),
         handleFileUpload(compFront, 'front'),
         handleFileUpload(compBack, 'back'),
         handleFileUpload(compPan, 'pan-card'),
@@ -532,6 +572,7 @@ Submitted via Elitetoolistic Exam Portal`
         pan_url: panUrl,
         signature_url: signUrl,
         profile_photo_url: photoUrl,
+        video_url: videoUrl,
         profile_completed: true
       }).eq('id', profile.id);
 
@@ -543,6 +584,7 @@ Submitted via Elitetoolistic Exam Portal`
         email: emailValue,
         address: fullAddress,
         photoUrl,
+        videoUrl,
         frontUrl,
         backUrl,
         panUrl,
@@ -689,10 +731,21 @@ Submitted via Elitetoolistic Exam Portal`
 
                 {/* Recorded Video Playback View */}
                 {recordedVideoUrl && !showCamera && (
-                  <div className="relative max-w-md w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 mb-4 bg-slate-950">
-                    <video src={recordedVideoUrl} controls className="w-full h-64 object-cover rounded-3xl"></video>
+                  <div className="flex flex-col items-center gap-4 w-full max-w-md">
+                    <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-950">
+                      <video src={recordedVideoUrl} controls className="w-full h-64 object-cover rounded-3xl"></video>
+                    </div>
                     
-                    <div className="p-3 bg-white border-t border-slate-100 flex justify-center">
+                    {capturedPhotoUrl && (
+                      <div className="flex flex-col items-center gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100 w-full animate-fade-in">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Captured Profile Photo</span>
+                        <div className="w-24 h-24 rounded-full overflow-hidden border border-slate-200 bg-white">
+                          <img src={capturedPhotoUrl} alt="Profile Photo" className="w-full h-full object-cover" />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-3 bg-white border border-slate-100 rounded-2xl w-full flex justify-center">
                       <button 
                         type="button" 
                         onClick={retakeVideo} 

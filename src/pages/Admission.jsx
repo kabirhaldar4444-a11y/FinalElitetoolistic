@@ -13,6 +13,29 @@ const indianStates = [
   "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
 ];
 
+// Helper to capture a frame from an HTMLVideoElement
+const captureProfilePic = (videoEl) => {
+  if (!videoEl) return null;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = videoEl.videoWidth || 640;
+    canvas.height = videoEl.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    // Mirror drawing since webcam is mirrored
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/jpeg', 0.85);
+    });
+  } catch (err) {
+    console.error('Failed to capture frame:', err);
+    return null;
+  }
+};
+
 const Admission = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -40,6 +63,8 @@ const Admission = () => {
   const [recordingTimer, setRecordingTimer] = useState(0);
   const [recordedVideoBlob, setRecordedVideoBlob] = useState(null);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState(null);
+  const [capturedPhotoBlob, setCapturedPhotoBlob] = useState(null);
+  const [capturedPhotoUrl, setCapturedPhotoUrl] = useState(null);
 
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -164,6 +189,17 @@ const Admission = () => {
       timerRef.current = setInterval(() => {
         setRecordingTimer(prev => prev + 1);
       }, 1000);
+
+      // Capture profile photo snapshot from video stream after 1 second
+      setTimeout(async () => {
+        if (videoRef.current) {
+          const photoBlob = await captureProfilePic(videoRef.current);
+          if (photoBlob) {
+            setCapturedPhotoBlob(photoBlob);
+            setCapturedPhotoUrl(URL.createObjectURL(photoBlob));
+          }
+        }
+      }, 1000);
     } catch (err) {
       console.error('Error starting video recording:', err);
       setErrorMsg('Failed to start video recording. Please ensure camera/mic permissions are enabled.');
@@ -184,6 +220,8 @@ const Admission = () => {
   const retakeVideo = () => {
     setRecordedVideoBlob(null);
     setRecordedVideoUrl(null);
+    setCapturedPhotoBlob(null);
+    setCapturedPhotoUrl(null);
     setRecordingTimer(0);
     startCamera();
   };
@@ -320,6 +358,7 @@ const Admission = () => {
     if (!stateName || stateName === 'Select State') return setErrorMsg('Please select your State / UT.');
     if (!cityName.trim()) return setErrorMsg('Please enter your City / District.');
     if (!recordedVideoBlob && !recordedVideoUrl) return setErrorMsg('Please record your live video statement reading the required script.');
+    if (!capturedPhotoBlob) return setErrorMsg('Please wait for the photo capture to complete during recording.');
     if (!aadhaarFrontPreview) return setErrorMsg('Please upload your Aadhaar Card (Front) image.');
     if (!aadhaarBackPreview) return setErrorMsg('Please upload your Aadhaar Card (Back) image.');
     if (!panCardPreview) return setErrorMsg('Please upload your PAN Card image.');
@@ -330,7 +369,8 @@ const Admission = () => {
     setLoadingMsg('Processing documents & saving application...');
 
     try {
-      const [photoUrl, frontUrl, backUrl, panUrl, signUrl] = await Promise.all([
+      const [photoUrl, videoUrl, frontUrl, backUrl, panUrl, signUrl] = await Promise.all([
+        uploadAsset(capturedPhotoBlob, 'profile_photo'),
         uploadAsset(recordedVideoBlob, 'profile_video'),
         uploadAsset(aadhaarFrontPreview, 'aadhaar_front'),
         uploadAsset(aadhaarBackPreview, 'aadhaar_back'),
@@ -352,6 +392,7 @@ const Admission = () => {
         pan_url: panUrl,
         signature_url: signUrl,
         profile_photo_url: photoUrl,
+        video_url: videoUrl,
         ip_address: userIp || 'Not captured',
         status: 'pending',
         created_at: new Date().toISOString()
@@ -405,7 +446,8 @@ VERIFICATION STATUS:
 
 DOCUMENT LINKS:
 ────────────────
-• Live Video Statement: ${photoUrl || 'N/A'}
+• Profile Photo: ${photoUrl || 'N/A'}
+• Live Video Statement: ${videoUrl || 'N/A'}
 • Aadhaar Front: ${frontUrl || 'N/A'}
 • Aadhaar Back: ${backUrl || 'N/A'}
 • PAN Card: ${panUrl || 'N/A'}
@@ -634,10 +676,21 @@ Submitted via Elitetoolistic Admission Portal
 
                   {/* Recorded Video Playback View */}
                   {recordedVideoUrl && !isCameraActive && (
-                    <div className="relative max-w-md w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 mb-4 bg-slate-950">
-                      <video src={recordedVideoUrl} controls className="w-full h-64 object-cover rounded-3xl"></video>
+                    <div className="flex flex-col items-center gap-4 w-full max-w-md">
+                      <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-slate-950">
+                        <video src={recordedVideoUrl} controls className="w-full h-64 object-cover rounded-3xl"></video>
+                      </div>
                       
-                      <div className="p-3 bg-white border-t border-slate-100 flex justify-center">
+                      {capturedPhotoUrl && (
+                        <div className="flex flex-col items-center gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100 w-full animate-fade-in">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Captured Profile Photo</span>
+                          <div className="w-24 h-24 rounded-full overflow-hidden border border-slate-200 bg-white">
+                            <img src={capturedPhotoUrl} alt="Profile Photo" className="w-full h-full object-cover" />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="p-3 bg-white border border-slate-100 rounded-2xl w-full flex justify-center">
                         <button 
                           type="button" 
                           onClick={retakeVideo} 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import supabase from '../../utils/supabase';
 
 const AdminAdmissions = ({ user, profile }) => {
@@ -438,8 +439,8 @@ const AdminAdmissions = ({ user, profile }) => {
       </div>
 
       {/* FULL DETAILS & VIDEO PLAYER MODAL */}
-      {selectedAdmission && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      {selectedAdmission && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-slate-900 border border-slate-800 text-white rounded-[2.5rem] p-6 md:p-8 max-w-4xl w-full max-h-[92vh] overflow-y-auto animate-fade-in relative shadow-2xl space-y-6">
             
             {/* Close Button */}
@@ -657,12 +658,13 @@ const AdminAdmissions = ({ user, profile }) => {
             </div>
 
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* FULL-SCREEN LIGHTBOX MODAL FOR DOCUMENTS */}
-      {previewMedia && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+      {previewMedia && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
           <div className="relative max-w-4xl w-full flex flex-col items-center space-y-4 animate-fade-in">
             <button 
               onClick={() => setPreviewMedia(null)}
@@ -683,12 +685,13 @@ const AdminAdmissions = ({ user, profile }) => {
               ↗ Open Original Image
             </a>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* APPROVE CONFIRMATION MODAL */}
-      {showApproveModal && targetApp && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      {showApproveModal && targetApp && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 text-white rounded-[2rem] p-6 md:p-8 max-w-md w-full animate-fade-in shadow-2xl">
             <h3 className="text-xl font-black mb-2 text-white flex items-center gap-2">
               <span className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">✓</span>
@@ -739,7 +742,8 @@ const AdminAdmissions = ({ user, profile }) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

@@ -11,6 +11,8 @@ import CreateUser from './components/admin/CreateUser';
 import EditUser from './components/admin/EditUser';
 import CompleteProfile from './pages/candidate/CompleteProfile';
 import MasterRecovery from './pages/MasterRecovery';
+import ServiceDelivery from './pages/candidate/ServiceDelivery';
+import ServiceDeliveryManager from './pages/admin/ServiceDeliveryManager';
 import ResetPassword from './pages/ResetPassword';
 import Admission from './pages/Admission';
 import supabase from './utils/supabase';
@@ -228,6 +230,18 @@ function App() {
           <Route path="/admin/users/edit/:id" element={
             profile?.role === 'admin' ? (
               <EditUser user={user} />
+            ) : <Navigate to="/login" />
+          } />
+          
+          <Route path="/servicedelivery" element={
+            profile?.role === 'candidate' ? (
+              <ServiceDelivery profile={profile} user={user} />
+            ) : <Navigate to="/login" />
+          } />
+
+          <Route path="/admin/users/servicedelivery/:id" element={
+            profile?.role === 'admin' ? (
+              <ServiceDeliveryManager user={user} profile={profile} />
             ) : <Navigate to="/login" />
           } />
           
