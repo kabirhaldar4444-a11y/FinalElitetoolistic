@@ -45,9 +45,6 @@ const Header = ({ isAdmin, isCandidate, onLogout, isExamActive, onSubmitExam }) 
                 <Link to="/" className={navLinkClass('/')}>
                   My Exams
                 </Link>
-                <Link to="/servicedelivery" className={navLinkClass('/servicedelivery')}>
-                  Service Delivery
-                </Link>
                 <Link to="/profile" className={navLinkClass('/profile')}>
                   Profile
                 </Link>

@@ -94,7 +94,7 @@ const CandidateDashboard = ({ exams, onStartExam, profile, user, isStaffView }) 
             )}
           </div>
           {!isStaffView && (
-            <Link to="/servicedelivery" className="glass-effect px-6 py-3 rounded-full flex items-center gap-3 border shadow-sm hover:scale-105 transition-all" style={{ backgroundColor: 'var(--input-bg)' }}>
+            <div className="glass-effect px-6 py-3 rounded-full flex items-center gap-3 border shadow-sm" style={{ backgroundColor: 'var(--input-bg)' }}>
               <span className="text-[10px] font-black uppercase tracking-widest text-[color:var(--text-light)]">KYC Status</span>
               <div className="flex items-center gap-2">
                 {isKycCompleted ? (
@@ -115,7 +115,7 @@ const CandidateDashboard = ({ exams, onStartExam, profile, user, isStaffView }) 
                   </>
                 )}
               </div>
-            </Link>
+            </div>
           )}
         </div>
 
