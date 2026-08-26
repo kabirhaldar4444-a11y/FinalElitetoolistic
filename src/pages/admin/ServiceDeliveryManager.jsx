@@ -81,7 +81,7 @@ const ServiceDeliveryManager = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/30 p-6 md:p-12 font-sans selection:bg-slate-100 animate-fade-in">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-[1680px] mx-auto space-y-8">
         
         <div className="flex items-center justify-between">
           <Link to="/admin/users" className="group inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-400 hover:text-slate-900 transition-colors">
@@ -217,14 +217,14 @@ const ServiceDeliveryManager = () => {
             <div className="pt-4">
               {/* Desktop Stepper */}
               <div className="hidden md:block overflow-x-auto pb-6 scrollbar-thin">
-                <div className="relative flex items-start justify-between min-w-[1400px] py-8 px-6">
+                <div className="relative flex items-start justify-between min-w-[1000px] py-8 px-6">
                   
-                  <div className="absolute top-[48px] left-[60px] right-[60px] h-[3px] bg-slate-100 -z-0">
+                  <div className="absolute top-[48px] left-[72px] right-[72px] h-[3px] bg-slate-100 -z-0">
                     <div className={`h-full transition-all duration-1000 ${isKycCompleted ? 'w-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'w-0 bg-slate-200'}`} />
                   </div>
 
                   {steps.map((step) => (
-                    <div key={step.id} className="flex flex-col items-center text-center w-32 relative z-10 group">
+                    <div key={step.id} className="flex flex-col items-center text-center w-24 relative z-10 group">
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black tracking-tight border-2 mb-4 bg-white transition-all duration-500 ${isKycCompleted ? 'border-emerald-500 text-emerald-600' : 'border-slate-200 text-slate-300'}`}>
                         {step.id}
                       </div>
@@ -237,7 +237,7 @@ const ServiceDeliveryManager = () => {
                         )}
                       </div>
 
-                      <p className={`mt-5 text-[10px] font-bold uppercase tracking-tight leading-snug max-w-[100px] break-words transition-colors duration-500 ${isKycCompleted ? 'text-slate-800' : 'text-slate-400'}`}>
+                      <p className={`mt-5 text-[10px] font-bold uppercase tracking-tight leading-snug max-w-[90px] break-words transition-colors duration-500 ${isKycCompleted ? 'text-slate-800' : 'text-slate-400'}`}>
                         {step.label}
                       </p>
                     </div>
