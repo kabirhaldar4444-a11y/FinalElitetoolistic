@@ -235,8 +235,20 @@ function App() {
           
           <Route path="/servicedelivery" element={
             profile?.role === 'admin' ? (
-              <Navigate to="/admin/users" />
+              <Navigate to="/admin/servicedelivery" />
             ) : <Navigate to="/" />
+          } />
+
+          <Route path="/admin/servicedelivery" element={
+            profile?.role === 'admin' ? (
+              <ServiceDeliveryManager user={user} profile={profile} />
+            ) : <Navigate to="/login" />
+          } />
+
+          <Route path="/admin/servicedelivery/:id" element={
+            profile?.role === 'admin' ? (
+              <ServiceDeliveryManager user={user} profile={profile} />
+            ) : <Navigate to="/login" />
           } />
 
           <Route path="/admin/users/servicedelivery/:id" element={

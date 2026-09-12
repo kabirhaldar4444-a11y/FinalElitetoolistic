@@ -450,52 +450,49 @@ The Portal shall not be held responsible for technical failures on the Candidate
 
 FINAL DECLARATION & FULL AGREEMENT:
 ──────────────────────────────────
-SERVICE DELIVERY:
-• Enrollment Process: Customers visit the Elitetoolistic website and fill out the Enrollment Form. After form submission, Our team connects with the customer.
-• Process Flow: A detailed email is shared explaining the complete process flow and fee structure. Payments may also be accepted directly through an authorized professional expert trainer account, where applicable.
-• Explanation: During the call, the team explains the course structure, learning journey, and assessment-to-certification flow. The customer then confirms their participation in the program.
-• Fee Payment: Upon successful completion of the fee payment, a GST-compliant invoice is issued within 6 hours. Pre-examination study materials are shared with the learner within 24 hours.
-• Pre-Exam: A Pre-Exam is conducted within 24–48 hours of fee payment. This exam assesses the customer’s initial understanding of the selected domain. Before the exam, the Guidance Team connects to explain the exam process.
-• Certificate: A Pre-Board Professional Certificate is issued with “Under Training” mentioned. Results are shared within 24–48 hours via email.
-• Reward: Customers scoring above 80% become eligible for a gift. One gift can be selected from four available options, which will be delivered accordingly.
-• Training: Access to recorded video lectures is shared within 15 days on payment. Training duration is 90–120 days.
-• Final Exam: A Final Exam is conducted between 90-120 days.
-• Final Certificate: Upon successful completion of all requirements, the Final Certificate is issued. The certificate will clearly state the status as “Certified.”
-• Support: Throughout the entire journey, the Elitetoolistic team remains in contact for guidance and support.
+SERVICE DELIVERY PROTOCOL (9-STEP SYSTEMATIC ARCHITECTURE):
+All digital services delivered by ELITE TOOLISTIC are tracked, timestamped, and verified across nine sequential fulfillment milestones:
+• Step 01: Immediate Admission Confirmation After Payment - Triggered instantly upon payment gateway clearance. Backend servers output an Automated Admission Confirmation Notice with permanent user profile IDs, platform workspace access routes, and an educational track overview map.
+• Step 02: Mandatory Document KYC Verification - All enrolled learners must securely upload valid government-issued photo identification to encrypted portal to ensure completion documentation matches legal corporate profiles accurately. Failure results in account suspension without refund.
+• Step 03: Secure Video KYC Authentication - To prevent platform identity theft, proxy testing, and transaction chargeback vectors, students execute an automated, self-directed biometric identity check via an integrated web interface matching uploaded documents, establishing an unalterable audit trail.
+• Step 04: System Generation & Delivery of GST Invoice - Within 24 hours of successful verification, accounting systems compile a comprehensive, legally compliant Corporate GST Invoice detailing exact service breakdown and tax identifiers, dispatched straight to billing tab.
+• Step 05: Dissemination of Comprehensive PDF Study Material (Strict One-Time Release) - Independent text registry unlocked with high-fidelity PDF Study Materials and Text Workbooks. Strict One-Time Release: files are shared once only; students must securely download and save immediately. Link refreshes or secondary file dispatches will not be granted.
+• Step 06: Issuance of Formal Training Enrollment Certificate - Records registry generates a formal, verifiable ELITE TOOLISTIC Enrollment Certificate serving as active commercial proof of status under training in an independent boot camp.
+• Step 07: Access Provisioning for Video Lecture Sessions (Strict One-Time Release) - Pre-recorded visual walkthroughs and technical screen-shares accessible. One-Time Release: access keys delivered once only. Profile splitting, sharing, or scraping triggers automated account bans without refund.
+• Step 08: Distribution of Final Examination Login Credentials - After the 10-day, 20-day, or 30-day curriculum timeline has elapsed, unique encrypted Final Exam Login Credentials are provided to complete the timed multiple-choice evaluation independently.
+• Step 09: Final Exam Result Processing & Delivery with Provisional Certificate (PC) - Grading engines parse submission data against metric matrices. Result Sheet displayed instantly and graduates are issued their verified Provisional Certificate (PC).
 
-TERMS & CONDITIONS:
-• Delivery: The complete course will be delivered within 90 to 120 days from the date of enrollment.
-• Access: After enrollment, learners will receive an Invoice, Study Materials and video lectures within 10 working days of making the payment.
-• Exams: A Pre-Board Exam will be scheduled 24 to 48 hours after payment. The final online exam must be attended between 90 to 120 days after enrollment.
-• Certification: Upon successful exam completion, the Final PC Softcopy will be emailed. The certificate will be released with an abbreviation format (e.g., "RCT" for Resilience Coach Training).
-• Training Format: No live training sessions will be provided. Study material and training videos will be shared once only via email. Training videos and study materials are non-transferable.
-• Exam Policy: Multiple exam attempts are not permitted. No hard copy certificates will be delivered.
-• Rewards: Candidates scoring 80% or above in the pre-exam will be eligible for a gift. Candidates provide consent for photo use on official platforms. Gift items will be dispatched within 45 to 60 days.
-• General Terms: All timelines mentioned are approximate. By enrolling, candidates agree to comply with all terms and conditions.
+TERMS & CONDITIONS (SERVICE FULFILLMENT & NO-REFUND POLICY):
+• 01. Scope of Independent Vocational Services: All services rendered are independent, skill-based vocational training programs on ELITE TOOLISTIC (https://www.elitetoolistic.com). Functions strictly as an asynchronous educational infrastructure platform. Programs are non-degree, non-diploma courses without affiliation, accreditation, or licensing from universities or educational boards. Institutional credentials granted on independent competency assessments.
+• 02. Asynchronous Delivery Model & Anti-Interactive Clauses: Training delivered solely via pre-recorded video modules and downloadable PDF workbooks. Never provides person-to-person instruction, live virtual classrooms, webinars, or tutor sessions. Student bears absolute responsibility; no claims for refunds based on lack of live human interaction will be entertained under any circumstances.
+• 03. 9-Step Service Delivery Protocol: Complete legal adherence to the backend-tracked 9-step fulfillment architecture.
+• 04. Defatigability of Services & Definitive No-Refund Policy: High-value digital intellectual property. All transactions are strictly FINAL, NON-CANCELLABLE, AND NON-REFUNDABLE.
+  - Instant Fulfillment Waiver: Waives right to operational cooling-off period or cancellation once Step 1 and Step 5 are executed.
+  - One-Time Sharing Indemnification: One-time release protocols provide definitive structural proof of service completion. Platform completely indemnified against student complaints regarding data loss, user error, or platform lockouts.
+  - KYC Refusal Forfeiture: Refusal or failure of Step 2/Step 3 results in permanent account ban for security breach; 100% of paid registration fees are entirely forfeited to cover administrative costs.
+  - Dispute & Chargeback Mitigation: Transaction disputes, chargebacks, or payment reversals treated legally as breach of contract. Platform will submit this binding policy and server logs to financial institutions to aggressively deny claims.
+• 05. Acceptance of Terms: Client declares they have read, understood, and agreed to be legally bound by this Service Delivery Framework and No-Refund Policy.
 
-PRIVACY POLICY:
-• Information We Collect: Personal Information (Your name, email address, contact number, and country of residence collected during registration or inquiries), Payment Information (Transaction details; we do not store complete payment card or crypto wallet details), Course and Usage Data (Information about the courses you enroll in, your progress, assessments, and interactions with our online learning platform), and Technical Information (Device type, IP address, browser version, and cookies to improve website performance and user experience).
-• Usage: Process your course enrollment and payments, provide access to study materials, exams, and course completion certificates, communicate important updates, reminders, and support-related information, improve course quality, website functionality, and user experience, maintain compliance with our internal policies and applicable laws. We do not sell, trade, or rent your personal information to any third party.
-• Data Security: All personal data is stored securely in encrypted databases. Only authorized Elitetoolistic personnel have access to user data. We regularly update our systems and employ security measures such as SSL encryption to protect against unauthorized access, alteration, or disclosure.
-• Retention & Rights: We retain your personal information for as long as necessary to fulfill course delivery and legal obligations. Once no longer needed, your data will be securely deleted or anonymized. Candidates can access the information we hold about them, request correction or deletion of inaccurate data, or withdraw consent for marketing communications at any time. To exercise these rights, please contact our support team at support@elitetoolistic.com.
-• Use of Cookies: Our website uses cookies to enhance your browsing experience, save login preferences, analyze site traffic and improve user experience. You can choose to disable cookies from your browser settings; however, some website features may not function properly as a result.
-• Third-Party Links: Our website may contain links to third-party websites. Elitetoolistic is not responsible for the privacy practices or content of these external sites.
-• Policy Updates: Elitetoolistic OPC Pvt Ltd and PayG reserves the right to update or modify this Privacy Policy at any time without prior notice.
+PRIVACY POLICY & DATA GOVERNANCE:
+• Data Collection Framework: Personal Identification Data (legal name, billing address, phone, corporate email, tax identifiers), Mandatory KYC Data (government photo ID, biometric Video KYC), Academic & Server Logs (evaluation metrics, workspace access keys, IP address mapping, download timestamps).
+• Purpose of Processing: Identity verification & anti-fraud audit trail, service fulfillment (workspace keys, video streams), verifiable credential issuance (Enrollment & Provisional Certificates), corporate GST invoice generation within 24 hours.
+• Third-Party Protections: We do not sell, rent, trade, or share personal, documentary, or biometric data with third-party marketing networks or data brokers.
+• Conditional Sharing Framework: Secure external payment processing; dispute/chargeback defense via server logs and KYC markers submitted to financial institutions; official court orders or statutory legal compliance.
+• Technical Safeguards: Secure encrypted network connections and storage; automated behavioral system bans for concurrent multi-location logins, scraping scripts, or video distribution.
+• Data Retention: Operational files retained while account is active; biometric and KYC audit trails securely preserved for contractual compliance.
+• Dynamic Acknowledgement: Interaction, registration, or data input implies explicit and dynamic acknowledgement of this Privacy Policy.
 
-REFUND POLICY:
-• Refund Rules: No refund will be applicable after attempting any exam. A 90% refund is applicable before attempting any exam. There is no 100% refund policy. A 10% deduction will apply to all refunds.
-• Refund Policy (Detailed):
-- No Refund After Exam Attempt: Once a candidate has attempted any exam, no refund will be applicable.
-- 90% Refund Before Exam Attempt: Eligible if request raised within 24 hours of payment and before attending the exam.
-- Refund Request: Email support@elitetoolistic.com with full details.
-- Deduction: A 10% deduction applies to all refunds.
-- Special Note: Refunds are not applicable for dissatisfaction, delays, or partially completed courses.
-
-LEGAL NOTICE:
-• Agreement to Policies: By enrolling, candidates acknowledge and agree to comply with all Elitetoolistic policies.
-• Independent Org: Elitetoolistic (OPC) PVT. LTD. is an independent training and service provider.
-• Employment: We do not guarantee any monetary benefit, job placement, or promotion.
-• Third-Party: Elitetoolistic shall not be held responsible for losses incurred via third-party representations.
+REFUND POLICY (FINANCIAL & FULFILLMENT POLICIES):
+• Binding Policy Notice: Transactions are strictly final, non-cancellable, and non-refundable upon immediate deployment of digital study materials and workspace access keys.
+• 01. Independent Status: Non-degree, non-diploma vocational training programs. Traditional institutional refund metrics and university withdrawal policies are wholly inapplicable.
+• 02. Asynchronous Delivery: Commercial valuation is tied directly to proprietary digital intellectual property rather than live instruction. Complete waiver of claims regarding structural isolation.
+• 03. 9-Step Tracking: Fulfillment systematically tracked, timestamped, and verified by automated backend server log database.
+• 04. No-Refund Core Policy: Complete waiver of cooling-off period; indemnification on one-time releases; 100% fee forfeiture on KYC refusal/failure; aggressive chargeback dispute defense.
+• 05. Legal Provisos:
+  - Technical Incompatibility: Hardware, OS, browser, and internet limitations are client's sole responsibility; no refunds for technical limitations, latency, or device incompatibility.
+  - Account Revocation: Instant termination without refund for concurrent multi-IP logins, data-scraping scripts, stream-ripping software, or fraudulent KYC submissions.
+  - Program Modification: Curriculum updates do not entitle client to a retrofitted refund, platform credit, or course exchange.
+• 06. Acceptance of Terms: Mandatory binding agreement to all financial and fulfillment rules.
 
 ACCEPTED BY CANDIDATE: YES ✓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

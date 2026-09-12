@@ -1,49 +1,81 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import supabase from '../../utils/supabase'; // Adjust path to your Supabase client
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import supabase from '../../utils/supabase';
 
 const steps = [
-  { id: 1, label: "Candidate submitted the service enrollment" },
-  { id: 2, label: "Proposal Email sent" },
-  { id: 3, label: "Payment received" },
-  { id: 4, label: "Invoice Sent" },
-  { id: 5, label: "Study material shared" },
-  { id: 6, label: "Login credentials shared" },
-  { id: 7, label: "Exam Cleared" },
-  { id: 8, label: "Completion Certificates Delivered" },
-  { id: 9, label: "Video Lectures Delivered" },
-  { id: 10, label: "Final Login Shared" },
-  { id: 11, label: "Final Exam Cleared" },
-  { id: 12, label: "PC verified" }
+  { id: 1, label: "Admission confirmation" },
+  { id: 2, label: "Document KYC verification" },
+  { id: 3, label: "Video KYC authentication" },
+  { id: 4, label: "GST Invoice delivered" },
+  { id: 5, label: "PDF study material shared" },
+  { id: 6, label: "Enrollment certificate issued" },
+  { id: 7, label: "Video lectures delivered" },
+  { id: 8, label: "Final exam login shared" },
+  { id: 9, label: "Result & PC delivered" }
 ];
+
+const getInitials = (name) => {
+  if (!name) return 'C';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 const ServiceDeliveryManager = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [candidate, setCandidate] = useState(null);
+  const [allCandidates, setAllCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchCandidateProfile();
+    fetchCandidates();
   }, [id]);
 
-  const fetchCandidateProfile = async () => {
+  const fetchCandidates = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch all candidate profiles so admin can switch easily
+      const { data: candidatesList, error: listError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) throw error;
-      setCandidate(data);
+        .eq('role', 'candidate')
+        .order('full_name', { ascending: true });
+
+      if (listError) throw listError;
+      setAllCandidates(candidatesList || []);
+
+      if (id) {
+        // Fetch specific candidate
+        const selected = (candidatesList || []).find(c => c.id === id);
+        if (selected) {
+          setCandidate(selected);
+        } else {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', id)
+            .single();
+          if (error) throw error;
+          setCandidate(data);
+        }
+      } else if (candidatesList && candidatesList.length > 0) {
+        // Default to first candidate if no ID in URL
+        setCandidate(candidatesList[0]);
+      } else {
+        setCandidate(null);
+      }
     } catch (err) {
-      console.error('Error fetching profile:', err);
+      console.error('Error fetching profiles:', err);
       setError(err.message || 'Profile fetch failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectCandidate = (newId) => {
+    navigate(`/admin/servicedelivery/${newId}`);
   };
 
   const isKycCompleted = !!(
@@ -53,10 +85,10 @@ const ServiceDeliveryManager = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white font-sans">
-        <div className="flex flex-col items-center gap-8">
-          <div className="w-12 h-12 border-4 border-slate-100 border-t-slate-900 rounded-full animate-spin shadow-sm"></div>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 animate-pulse">Synchronizing Record...</p>
+      <div className="min-h-screen flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 animate-pulse">Loading Service Delivery...</p>
         </div>
       </div>
     );
@@ -64,216 +96,267 @@ const ServiceDeliveryManager = () => {
 
   if (error || !candidate) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-white font-sans">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 font-sans px-4">
         <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center shadow-lg">
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+          <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-black text-slate-900 uppercase">Profile Fetch Failed</h2>
-          <p className="text-slate-400 text-sm">{error || 'We could not locate this profile.'}</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">No Candidate Selected</h2>
+          <p className="text-slate-400 text-sm max-w-sm">Please select a candidate from your directory to view their service delivery milestones.</p>
         </div>
         <Link to="/admin/users">
-          <button className="bg-slate-900 text-white font-bold py-3 px-8 rounded-xl text-xs hover:bg-slate-800 transition-all">Back to Users</button>
+          <button className="bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold py-3 px-8 rounded-full text-xs shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+            Back to Candidates
+          </button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/30 p-6 md:p-12 font-sans selection:bg-slate-100 animate-fade-in">
-      <div className="max-w-[1680px] mx-auto space-y-8">
+    <div className="min-h-screen py-8 px-4 md:px-8 font-sans animate-fade-in">
+      <div className="max-w-6xl mx-auto space-y-6">
         
-        <div className="flex items-center justify-between">
-          <Link to="/admin/users" className="group inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-400 hover:text-slate-900 transition-colors">
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" className="group-hover:-translate-x-1 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            Back to Directory
+        {/* Top Controls: Back Button & Candidate Selector */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <Link 
+            to="/admin/users" 
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-sm hover:shadow transition-all group"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="group-hover:-translate-x-1 transition-transform">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>BACK TO CANDIDATE CARDS</span>
           </Link>
+
+          {allCandidates.length > 1 && (
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Candidate:</span>
+              <select 
+                value={candidate?.id || ''} 
+                onChange={(e) => handleSelectCandidate(e.target.value)}
+                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer pr-2"
+              >
+                {allCandidates.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.full_name || 'Candidate'} ({c.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* HERO CARD: 9-Step Service Delivery (Matches Reference Screenshot) */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] p-8 md:p-12 relative overflow-hidden">
           
-          {/* LEFT COLUMN: CANDIDATE CARD & DOCUMENT STATUS */}
-          <div className="w-full lg:w-96 shrink-0 space-y-8">
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.03)] p-8 flex flex-col items-center text-center relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-2 bg-slate-900" />
-              
-              <div className="relative mb-6 mt-4">
-                <div className="w-28 h-28 rounded-[2.5rem] bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shadow-md">
-                  {candidate.profile_photo_url ? (
-                    <img src={candidate.profile_photo_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-4xl font-black text-slate-800 uppercase">
-                      {candidate.full_name?.charAt(0) || 'C'}
-                    </div>
-                  )}
-                </div>
+          {/* Card Top: Candidate Info, Title, Status */}
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 pb-12 border-b border-slate-100/80">
+            {/* Left: Avatar + Candidate Details */}
+            <div className="flex items-center gap-4 w-full lg:w-auto">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 border-2 border-white shadow-md flex items-center justify-center overflow-hidden shrink-0">
+                {candidate.profile_photo_url ? (
+                  <img src={candidate.profile_photo_url} alt={candidate.full_name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-slate-700 font-black text-xl tracking-wider">
+                    {getInitials(candidate.full_name)}
+                  </span>
+                )}
               </div>
-
-              <h2 className="text-xl font-black text-slate-900 tracking-tight mb-1 uppercase break-words max-w-full">
-                {candidate.full_name || 'Anonymous Object'}
-              </h2>
-              <p className="text-xs font-bold text-slate-400 truncate max-w-full tracking-tight mb-6">
-                {candidate.email}
-              </p>
-
-              <div className="w-full pt-6 border-t border-slate-50 flex flex-col gap-3 text-left">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">KYC Deliverables</h3>
-                
-                {[
-                  { label: "Profile Photo", present: !!candidate.profile_photo_url },
-                  { label: "Aadhaar Card Front", present: !!candidate.aadhaar_front_url },
-                  { label: "Aadhaar Card Back", present: !!candidate.aadhaar_back_url },
-                  { label: "Profile Registration Completed", present: !!candidate.profile_completed }
-                ].map((doc, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2.5 px-4 bg-slate-50/50 rounded-xl border border-slate-100">
-                    <span className="text-xs font-semibold text-slate-600">{doc.label}</span>
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border ${doc.present ? 'bg-emerald-50 text-emerald-500 border-emerald-200' : 'bg-rose-50 text-rose-500 border-rose-200'}`}>
-                      {doc.present ? (
-                        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                      ) : (
-                        <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                      )}
-                    </span>
-                  </div>
-                ))}
+              <div className="truncate">
+                <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight uppercase truncate">
+                  {candidate.full_name || 'Candidate Name'}
+                </h2>
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mt-0.5 truncate">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="shrink-0">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                  </svg>
+                  <span className="truncate">{candidate.email}</span>
+                </div>
               </div>
             </div>
 
-            {/* Document Previews */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.03)] p-8">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 pb-4 border-b border-slate-50">KYC Uploads Preview</h3>
-              
-              <div className="space-y-6">
-                {[
-                  { label: "Aadhaar Front", url: candidate.aadhaar_front_url },
-                  { label: "Aadhaar Back", url: candidate.aadhaar_back_url },
-                  { label: "Signature", url: candidate.signature_url }
-                ].map((doc, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <span className="text-xs font-bold text-slate-700">{doc.label}</span>
-                    {doc.url ? (
-                      <div className="relative group rounded-2xl overflow-hidden border border-slate-100 aspect-[1.618] bg-slate-50 flex items-center justify-center">
-                        {doc.url.toLowerCase().includes('.pdf') ? (
-                          <div className="flex flex-col items-center gap-2 p-4 text-slate-400">
-                            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                            <span className="text-[10px] font-bold uppercase tracking-wider">PDF Document</span>
-                          </div>
-                        ) : (
-                          <img src={doc.url} alt="" className="w-full h-full object-cover" />
-                        )}
-                        <a 
-                          href={doc.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-300 gap-2 font-bold text-xs"
-                        >
-                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                          Inspect Full
-                        </a>
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border-2 border-dashed border-slate-100 aspect-[1.618] flex items-center justify-center text-slate-300">
-                        <span className="text-[10px] font-black uppercase tracking-wider">No upload</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+            {/* Center: Title */}
+            <div className="text-center">
+              <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
+                Service Delivery
+              </h1>
+            </div>
+
+            {/* Right: Status Pill */}
+            <div className="shrink-0">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-emerald-50/80 border border-emerald-200 text-emerald-800 shadow-sm">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <span className="text-xs font-black tracking-tight text-emerald-700">
+                  {isKycCompleted ? 'Service Delivery Completed' : 'Pending Verification'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: TIMELINE PREVIEW */}
-          <div className="flex-1 w-full bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.03)] p-8 md:p-12 space-y-10">
-            
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-slate-100 pb-8">
-              <div>
-                <h1 className="text-3xl font-black tracking-tight text-slate-900 mb-2">Service Delivery Milestones</h1>
-                <p className="text-slate-400 font-medium text-sm">Preview of candidate service timeline according to verification progress</p>
+          {/* 9 Live Steps Progress Timeline */}
+          <div className="pt-10 overflow-x-auto pb-4 scrollbar-thin">
+            <div className="min-w-[950px] px-6 relative">
+              
+              {/* Background & Progress Gradient Track */}
+              <div className="absolute top-[48px] left-[65px] right-[65px] h-[3px] bg-slate-200 -z-0">
+                <div 
+                  className={`h-full transition-all duration-1000 ${
+                    isKycCompleted 
+                      ? 'w-full bg-gradient-to-r from-purple-500 via-blue-500 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]' 
+                      : 'w-1/3 bg-gradient-to-r from-purple-500 to-blue-500'
+                  }`} 
+                />
               </div>
 
-              <div className="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-slate-50 border border-slate-100 w-fit">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculated Status</span>
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${isKycCompleted ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]'}`} />
-                  <span className="text-xs font-bold text-slate-800">
-                    {isKycCompleted ? 'Delivery Completed' : 'Pending KYC'}
-                  </span>
-                </div>
-              </div>
-            </div>
+              {/* 9 Milestone Columns */}
+              <div className="relative flex items-start justify-between">
+                {steps.map((step) => {
+                  const isCompleted = isKycCompleted || step.id <= 3;
 
-            <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl flex items-start gap-4">
-              <span className="text-slate-400 pt-0.5">
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.063.852l-.708 2.836a.75.75 0 001.063.852l-.708 2.836M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-              </span>
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 mb-1">Automatic Progression System</h4>
-                <p className="text-slate-400 text-xs font-medium leading-relaxed">
-                  The candidate's 12 service delivery steps will dynamically unlock and display checkmarks once all registration uploads (photo, Aadhaar front & back) are verified. No manual updates are required.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              {/* Desktop Stepper */}
-              <div className="hidden md:block overflow-x-auto pb-6 scrollbar-thin">
-                <div className="relative flex items-start justify-between min-w-[1000px] py-8 px-6">
-                  
-                  <div className="absolute top-[48px] left-[72px] right-[72px] h-[3px] bg-slate-100 -z-0">
-                    <div className={`h-full transition-all duration-1000 ${isKycCompleted ? 'w-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'w-0 bg-slate-200'}`} />
-                  </div>
-
-                  {steps.map((step) => (
+                  return (
                     <div key={step.id} className="flex flex-col items-center text-center w-24 relative z-10 group">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black tracking-tight border-2 mb-4 bg-white transition-all duration-500 ${isKycCompleted ? 'border-emerald-500 text-emerald-600' : 'border-slate-200 text-slate-300'}`}>
+                      
+                      {/* Top Step Number Circle */}
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border transition-all duration-500 bg-white ${
+                        isCompleted 
+                          ? 'border-emerald-500 text-emerald-600 shadow-sm' 
+                          : 'border-slate-300 text-slate-400'
+                      }`}>
                         {step.id}
                       </div>
 
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white transition-all duration-500 shadow-sm ${isKycCompleted ? 'bg-emerald-500 text-white shadow-emerald-100 scale-110' : 'bg-slate-100 text-slate-300'}`}>
-                        {isKycCompleted ? (
-                          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      {/* Vertical Drop Connector */}
+                      <div className={`w-[2px] h-3.5 transition-colors duration-500 ${
+                        isCompleted ? 'bg-emerald-500' : 'bg-slate-300'
+                      }`} />
+
+                      {/* Main Track Node (Green Checkmark) */}
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 border-white transition-all duration-500 shadow-md ${
+                        isCompleted 
+                          ? 'bg-emerald-500 text-white shadow-emerald-500/30 scale-105' 
+                          : 'bg-slate-200 text-slate-400'
+                      }`}>
+                        {isCompleted ? (
+                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
                         ) : (
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                         )}
                       </div>
 
-                      <p className={`mt-5 text-[10px] font-bold uppercase tracking-tight leading-snug max-w-[90px] break-words transition-colors duration-500 ${isKycCompleted ? 'text-slate-800' : 'text-slate-400'}`}>
+                      {/* Step Label */}
+                      <p className={`mt-4 text-[11px] font-bold capitalize tracking-tight leading-snug max-w-[95px] break-words transition-colors duration-500 ${
+                        isCompleted ? 'text-slate-800' : 'text-slate-400'
+                      }`}>
                         {step.label}
                       </p>
                     </div>
-                  ))}
+                  );
+                })}
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        {/* DETAILS SECTION: KYC Deliverables & Upload Previews */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+          
+          {/* Card 1: Deliverables Checklist */}
+          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">KYC Status Checklist</h3>
+            <div className="space-y-2.5">
+              {[
+                { label: "Step 01: Admission Confirmation", present: true },
+                { label: "Step 02: Document KYC (Aadhaar)", present: !!(candidate.aadhaar_front_url && candidate.aadhaar_back_url) },
+                { label: "Step 03: Video KYC / Live Photo", present: !!(candidate.profile_photo_url || candidate.video_statement_url) },
+                { label: "Step 04: GST Invoice Generation", present: isKycCompleted },
+                { label: "Step 05: PDF Study Material Release", present: isKycCompleted },
+                { label: "Step 06: Enrollment Certificate", present: isKycCompleted },
+                { label: "Step 07: Video Lectures Delivered", present: isKycCompleted },
+                { label: "Step 08: Final Exam Login Shared", present: isKycCompleted },
+                { label: "Step 09: Result & PC Delivered", present: isKycCompleted }
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between py-2 px-3 bg-slate-50/60 rounded-xl border border-slate-100/80 text-xs">
+                  <span className="font-semibold text-slate-700">{item.label}</span>
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border ${
+                    item.present ? 'bg-emerald-50 text-emerald-500 border-emerald-200' : 'bg-amber-50 text-amber-500 border-amber-200'
+                  }`}>
+                    {item.present ? (
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    ) : (
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    )}
+                  </span>
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
 
-              {/* Mobile Stepper */}
-              <div className="md:hidden flex flex-col gap-8 relative pl-6 before:absolute before:left-[15px] before:top-4 before:bottom-4 before:w-[2px] before:bg-slate-100">
-                <div className={`absolute left-[15px] top-4 bottom-4 w-[2px] transition-all duration-1000 origin-top ${isKycCompleted ? 'scale-y-100 bg-emerald-500' : 'scale-y-0 bg-slate-200'}`} />
-
-                {steps.map((step) => (
-                  <div key={step.id} className="relative flex gap-5 items-start">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 border-white z-10 shadow-sm transition-all duration-500 ${isKycCompleted ? 'bg-emerald-500 text-white shadow-emerald-100 scale-105' : 'bg-slate-100 text-slate-300'}`}>
-                      {isKycCompleted ? (
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+          {/* Card 2 & 3: Uploaded Identity Assets */}
+          <div className="md:col-span-2 bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Identity & Verification Assets</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { label: "Aadhaar Front", url: candidate.aadhaar_front_url },
+                { label: "Aadhaar Back", url: candidate.aadhaar_back_url },
+                { label: "Digital Signature", url: candidate.signature_url }
+              ].map((doc, idx) => (
+                <div key={idx} className="space-y-1.5">
+                  <span className="text-xs font-bold text-slate-700">{doc.label}</span>
+                  {doc.url ? (
+                    <div className="relative group rounded-xl overflow-hidden border border-slate-200/80 aspect-[1.4] bg-slate-50 flex items-center justify-center shadow-inner">
+                      {doc.url.toLowerCase().includes('.pdf') ? (
+                        <div className="flex flex-col items-center gap-1.5 p-4 text-slate-400">
+                          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                          <span className="text-[10px] font-bold uppercase tracking-wider">PDF Document</span>
+                        </div>
                       ) : (
-                        <span className="text-[10px] font-bold">{step.id}</span>
+                        <img src={doc.url} alt={doc.label} className="w-full h-full object-cover" />
                       )}
+                      <a 
+                        href={doc.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-200 gap-1.5 font-bold text-xs"
+                      >
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        Inspect
+                      </a>
                     </div>
-
-                    <div className="flex-1 pt-1.5">
-                      <span className={`text-[9px] font-black uppercase tracking-wider block mb-1 ${isKycCompleted ? 'text-emerald-500' : 'text-slate-300'}`}>
-                        Step {step.id}
-                      </span>
-                      <p className={`text-xs font-bold leading-normal ${isKycCompleted ? 'text-slate-800' : 'text-slate-400'}`}>
-                        {step.label}
-                      </p>
+                  ) : (
+                    <div className="rounded-xl border-2 border-dashed border-slate-100 aspect-[1.4] flex items-center justify-center text-slate-300">
+                      <span className="text-[10px] font-black uppercase tracking-wider">Not Uploaded</span>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </div>
+              ))}
             </div>
 
+            {/* Quick Profile Summary Footer */}
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <span className="text-slate-400 font-medium">
+                Candidate ID: <code className="font-mono text-slate-600 bg-slate-50 px-2 py-0.5 rounded">{candidate.id?.slice(0, 8)}...</code>
+              </span>
+              <div className="flex gap-2">
+                <Link to={`/admin/users/edit/${candidate.id}`}>
+                  <button className="px-4 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 text-xs transition-colors">
+                    Edit Candidate
+                  </button>
+                </Link>
+              </div>
+            </div>
           </div>
+
         </div>
+
       </div>
     </div>
   );

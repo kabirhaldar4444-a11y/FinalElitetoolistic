@@ -378,7 +378,10 @@ const EditUser = ({ user }) => {
 
           {/* User Submissions / Marks Release */}
           <div className="pt-12 border-t animate-slide-up animation-delay-400" style={{ borderColor: 'var(--glass-border)' }}>
-            <h3 className="text-2xl font-black mb-8 tracking-tight text-[color:var(--text-dark)]">Performance & Mark Release</h3>
+            <h3 className="text-2xl font-black mb-2 tracking-tight text-[color:var(--text-dark)]">Performance & Mark Release</h3>
+            <p className="text-xs text-[color:var(--text-light)] mb-8 font-medium">
+              Adjust marks using the + / - buttons or type directly. Click <strong className="text-emerald-500 font-bold">SAVE MARKS</strong> (or press Enter) on the card to save new marks directly.
+            </p>
             <div className="glass-card-saas p-8">
               <UserSubmissions userId={id} />
             </div>

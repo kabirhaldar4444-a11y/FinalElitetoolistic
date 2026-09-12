@@ -3,7 +3,8 @@ import supabase from '../../utils/supabase';
 import { useToast } from '../common/AlertProvider';
 
 const SubmissionCard = ({ sub, viewDetails, handleToggleRelease, fetchSubmissions, toast, isReadOnly }) => {
-  const maxScore = sub.total_questions * 5;
+  // Allow admins to override marks up to 100 or the exam's calculated maximum
+  const maxScore = Math.max(100, (sub.total_questions || 0) * 5, sub.score || 0);
   const currentSavedScore = sub.admin_score_override ?? sub.score;
   
   // Single source of truth for the local UI
@@ -47,7 +48,7 @@ const SubmissionCard = ({ sub, viewDetails, handleToggleRelease, fetchSubmission
     } else {
       setLocalScore(validScore); // Lock in the valid state
       await fetchSubmissions(); 
-      toast('Marks explicitly saved and updated successfully', 'success');
+      toast('Marks updated and saved successfully!', 'success');
     }
     
     setIsSyncing(false);
@@ -94,7 +95,10 @@ const SubmissionCard = ({ sub, viewDetails, handleToggleRelease, fetchSubmission
   const handleInputBlur = () => {
     // Gracefully handle empty or invalid state if user clicks away without saving
     let validScore = parseInt(localScore);
-    if (isNaN(validScore)) validScore = currentSavedScore; // Restores visually instantly
+    if (isNaN(validScore)) {
+      setLocalScore(currentSavedScore);
+      return;
+    }
     if (validScore < 0) validScore = 0;
     if (validScore > maxScore) validScore = maxScore;
     setLocalScore(validScore);
@@ -104,7 +108,7 @@ const SubmissionCard = ({ sub, viewDetails, handleToggleRelease, fetchSubmission
   const isAtMax = (parseInt(localScore) || 0) >= maxScore;
 
   return (
-    <div className="relative glass-card-saas p-6 border group transition-all duration-500 hover:shadow-lg" style={{ borderColor: 'var(--glass-border)', backgroundColor: isDirty ? 'var(--input-bg)' : 'transparent' }}>
+    <div className="relative glass-card-saas p-6 border group transition-all duration-500 hover:shadow-lg" style={{ borderColor: isDirty ? 'rgba(245, 158, 11, 0.4)' : 'var(--glass-border)', backgroundColor: isDirty ? 'var(--input-bg)' : 'transparent' }}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         
         <div className="flex-1">
@@ -119,7 +123,8 @@ const SubmissionCard = ({ sub, viewDetails, handleToggleRelease, fetchSubmission
           </div>
           <div className="flex items-center gap-4 text-sm font-semibold text-[color:var(--text-light)] ml-[52px]">
             <span className="flex items-center gap-1.5 opacity-80 pb-0.5">
-              Marks: <span className="font-black text-[color:var(--text-dark)]">{sub.score}</span>
+              Current Marks: <span className="font-black text-[color:var(--text-dark)]">{currentSavedScore}</span>
+              {hasOverride && <span className="text-xs text-slate-400 font-normal">(Auto: {sub.score})</span>}
             </span>
           </div>
         </div>
@@ -128,7 +133,7 @@ const SubmissionCard = ({ sub, viewDetails, handleToggleRelease, fetchSubmission
           <div className="flex flex-wrap items-center gap-6 ml-[52px] md:ml-0">
             
             {/* Smart Marks UI Editor */}
-            <div className="flex flex-col relative w-[160px]">
+            <div className="flex flex-col relative w-[180px]">
               <div className="flex justify-between items-end mb-1.5 px-1 opacity-80 h-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-primary-500 drop-shadow-sm">Final Marks</span>
                 {hasOverride && !isDirty && (
@@ -161,9 +166,15 @@ const SubmissionCard = ({ sub, viewDetails, handleToggleRelease, fetchSubmission
                     value={localScore}
                     onChange={handleInputChange}
                     onBlur={handleInputBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveScoreToDB();
+                      }
+                    }}
                     min="0"
                     max={maxScore}
-                    title="Directly type marks"
+                    title="Directly type marks and press Enter to save"
                     disabled={isSyncing}
                     className="w-full text-center font-black text-2xl text-[color:var(--text-dark)] bg-transparent border-none outline-none m-0 p-0 transition-colors focus:text-amber-500"
                     style={{ MozAppearance: 'textfield' }}
@@ -181,28 +192,35 @@ const SubmissionCard = ({ sub, viewDetails, handleToggleRelease, fetchSubmission
                 </button>
               </div>
 
-              {/* Smart Save Dropdown */}
-              <div className={`overflow-hidden transition-all duration-300 w-full flex absolute top-full left-0 z-20 ${isDirty ? 'max-h-12 opacity-100 mt-2' : 'max-h-0 opacity-0 pointer-events-none'}`}>
-                <div className="flex gap-2 w-full">
+              {/* Prominent Save / Discard Controls */}
+              {isDirty && (
+                <div className="flex gap-2 w-full mt-2 animate-fade-in">
                   <button 
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={saveScoreToDB} 
                     disabled={isSyncing} 
-                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-2 text-xs font-black transition-all shadow-md shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-1 disabled:opacity-50 disabled:scale-100"
+                    className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl py-2 px-3 text-xs font-black transition-all shadow-md shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
-                    {isSyncing ? <div className="w-4 h-4 border-[3px] border-white/30 border-t-white rounded-full animate-spin"></div> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
-                    SAVE
+                    {isSyncing ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                    )}
+                    <span>SAVE MARKS</span>
                   </button>
                   <button 
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => setLocalScore(currentSavedScore)} 
                     disabled={isSyncing} 
-                    className="flex-1 bg-[color:var(--input-bg)] border border-[color:var(--input-border)] hover:bg-black/5 text-[color:var(--text-dark)] rounded-xl py-2 text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-1 disabled:opacity-50"
+                    className="bg-[color:var(--input-bg)] border border-[color:var(--input-border)] hover:bg-black/5 text-[color:var(--text-dark)] rounded-xl py-2 px-2.5 text-xs font-black transition-all active:scale-95 flex items-center justify-center disabled:opacity-50"
                     title="Discard changes"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    CANCEL
                   </button>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Quick Actions */}

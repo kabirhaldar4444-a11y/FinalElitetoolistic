@@ -431,7 +431,6 @@ CANDIDATE INFORMATION:
 • Application Ref ID: ${recordId}
 • Full Name: ${fullName}
 • Email ID: ${email}
-• Phone: ${phone}
 • Course Applied: ${courseName}
 • PIN Code: ${pincode}
 • Location: ${cityName}, ${stateName}
@@ -443,6 +442,73 @@ VERIFICATION STATUS:
 • Declaration: CHECKED & ACCEPTED ✓
 • Signature: CAPTURED & VERIFIED ✓
 • Documentation & Assets: ALL UPLOADED ✓
+
+LEGAL ACKNOWLEDGEMENT & ATTESTATION:
+──────────────────────────────────
+1. IDENTITY VERIFICATION:
+Candidate authorizes live photo capture for identity
+authentication and anti-proxy measures.
+
+2. PURPOSE OF CERTIFICATION AND EMPLOYMENT DISCLAIMER:
+Candidate acknowledges and agrees that this certification is intended solely for personal and professional growth.
+- No Guarantee of Employment: Successful completion of the exam and issuance of a certificate does not guarantee a job offer, placement, or any form of employment.
+- No Guarantee of Financial Increase: This certification does not entitle the Candidate to a salary hike, promotion, or bonus from any current or future employer.
+The Portal and its affiliates are not liable for any career expectations not met following the attainment of this certification.
+
+3. ACADEMIC INTEGRITY:
+Candidate agrees to complete the examination independently without the use of unauthorized materials, AI tools, or external assistance. Any detected malpractice will lead to the permanent banning of the Candidate’s profile and the nullification of any previous results.
+
+4. LIMITATION OF LIABILITY:
+The Portal shall not be held responsible for technical failures on the Candidate’s end, including but not limited to internet connectivity issues, hardware malfunctions, or power outages during the examination session.
+
+FINAL DECLARATION & FULL AGREEMENT:
+──────────────────────────────────
+SERVICE DELIVERY PROTOCOL (9-STEP SYSTEMATIC ARCHITECTURE):
+All digital services delivered by ELITE TOOLISTIC are tracked, timestamped, and verified across nine sequential fulfillment milestones:
+• Step 01: Immediate Admission Confirmation After Payment - Triggered instantly upon payment gateway clearance. Backend servers output an Automated Admission Confirmation Notice with permanent user profile IDs, platform workspace access routes, and an educational track overview map.
+• Step 02: Mandatory Document KYC Verification - All enrolled learners must securely upload valid government-issued photo identification to encrypted portal to ensure completion documentation matches legal corporate profiles accurately. Failure results in account suspension without refund.
+• Step 03: Secure Video KYC Authentication - To prevent platform identity theft, proxy testing, and transaction chargeback vectors, students execute an automated, self-directed biometric identity check via an integrated web interface matching uploaded documents, establishing an unalterable audit trail.
+• Step 04: System Generation & Delivery of GST Invoice - Within 24 hours of successful verification, accounting systems compile a comprehensive, legally compliant Corporate GST Invoice detailing exact service breakdown and tax identifiers, dispatched straight to billing tab.
+• Step 05: Dissemination of Comprehensive PDF Study Material (Strict One-Time Release) - Independent text registry unlocked with high-fidelity PDF Study Materials and Text Workbooks. Strict One-Time Release: files are shared once only; students must securely download and save immediately. Link refreshes or secondary file dispatches will not be granted.
+• Step 06: Issuance of Formal Training Enrollment Certificate - Records registry generates a formal, verifiable ELITE TOOLISTIC Enrollment Certificate serving as active commercial proof of status under training in an independent boot camp.
+• Step 07: Access Provisioning for Video Lecture Sessions (Strict One-Time Release) - Pre-recorded visual walkthroughs and technical screen-shares accessible. One-Time Release: access keys delivered once only. Profile splitting, sharing, or scraping triggers automated account bans without refund.
+• Step 08: Distribution of Final Examination Login Credentials - After the 10-day, 20-day, or 30-day curriculum timeline has elapsed, unique encrypted Final Exam Login Credentials are provided to complete the timed multiple-choice evaluation independently.
+• Step 09: Final Exam Result Processing & Delivery with Provisional Certificate (PC) - Grading engines parse submission data against metric matrices. Result Sheet displayed instantly and graduates are issued their verified Provisional Certificate (PC).
+
+TERMS & CONDITIONS (SERVICE FULFILLMENT & NO-REFUND POLICY):
+• 01. Scope of Independent Vocational Services: All services rendered are independent, skill-based vocational training programs on ELITE TOOLISTIC (https://www.elitetoolistic.com). Functions strictly as an asynchronous educational infrastructure platform. Programs are non-degree, non-diploma courses without affiliation, accreditation, or licensing from universities or educational boards. Institutional credentials granted on independent competency assessments.
+• 02. Asynchronous Delivery Model & Anti-Interactive Clauses: Training delivered solely via pre-recorded video modules and downloadable PDF workbooks. Never provides person-to-person instruction, live virtual classrooms, webinars, or tutor sessions. Student bears absolute responsibility; no claims for refunds based on lack of live human interaction will be entertained under any circumstances.
+• 03. 9-Step Service Delivery Protocol: Complete legal adherence to the backend-tracked 9-step fulfillment architecture.
+• 04. Defatigability of Services & Definitive No-Refund Policy: High-value digital intellectual property. All transactions are strictly FINAL, NON-CANCELLABLE, AND NON-REFUNDABLE.
+  - Instant Fulfillment Waiver: Waives right to operational cooling-off period or cancellation once Step 1 and Step 5 are executed.
+  - One-Time Sharing Indemnification: One-time release protocols provide definitive structural proof of service completion. Platform completely indemnified against student complaints regarding data loss, user error, or platform lockouts.
+  - KYC Refusal Forfeiture: Refusal or failure of Step 2/Step 3 results in permanent account ban for security breach; 100% of paid registration fees are entirely forfeited to cover administrative costs.
+  - Dispute & Chargeback Mitigation: Transaction disputes, chargebacks, or payment reversals treated legally as breach of contract. Platform will submit this binding policy and server logs to financial institutions to aggressively deny claims.
+• 05. Acceptance of Terms: Client declares they have read, understood, and agreed to be legally bound by this Service Delivery Framework and No-Refund Policy.
+
+PRIVACY POLICY & DATA GOVERNANCE:
+• Data Collection Framework: Personal Identification Data (legal name, billing address, phone, corporate email, tax identifiers), Mandatory KYC Data (government photo ID, biometric Video KYC), Academic & Server Logs (evaluation metrics, workspace access keys, IP address mapping, download timestamps).
+• Purpose of Processing: Identity verification & anti-fraud audit trail, service fulfillment (workspace keys, video streams), verifiable credential issuance (Enrollment & Provisional Certificates), corporate GST invoice generation within 24 hours.
+• Third-Party Protections: We do not sell, rent, trade, or share personal, documentary, or biometric data with third-party marketing networks or data brokers.
+• Conditional Sharing Framework: Secure external payment processing; dispute/chargeback defense via server logs and KYC markers submitted to financial institutions; official court orders or statutory legal compliance.
+• Technical Safeguards: Secure encrypted network connections and storage; automated behavioral system bans for concurrent multi-location logins, scraping scripts, or video distribution.
+• Data Retention: Operational files retained while account is active; biometric and KYC audit trails securely preserved for contractual compliance.
+• Dynamic Acknowledgement: Interaction, registration, or data input implies explicit and dynamic acknowledgement of this Privacy Policy.
+
+REFUND POLICY (FINANCIAL & FULFILLMENT POLICIES):
+• Binding Policy Notice: Transactions are strictly final, non-cancellable, and non-refundable upon immediate deployment of digital study materials and workspace access keys.
+• 01. Independent Status: Non-degree, non-diploma vocational training programs. Traditional institutional refund metrics and university withdrawal policies are wholly inapplicable.
+• 02. Asynchronous Delivery: Commercial valuation is tied directly to proprietary digital intellectual property rather than live instruction. Complete waiver of claims regarding structural isolation.
+• 03. 9-Step Tracking: Fulfillment systematically tracked, timestamped, and verified by automated backend server log database.
+• 04. No-Refund Core Policy: Complete waiver of cooling-off period; indemnification on one-time releases; 100% fee forfeiture on KYC refusal/failure; aggressive chargeback dispute defense.
+• 05. Legal Provisos:
+  - Technical Incompatibility: Hardware, OS, browser, and internet limitations are client's sole responsibility; no refunds for technical limitations, latency, or device incompatibility.
+  - Account Revocation: Instant termination without refund for concurrent multi-IP logins, data-scraping scripts, stream-ripping software, or fraudulent KYC submissions.
+  - Program Modification: Curriculum updates do not entitle client to a retrofitted refund, platform credit, or course exchange.
+• 06. Acceptance of Terms: Mandatory binding agreement to all financial and fulfillment rules.
+
+ACCEPTED BY CANDIDATE: YES ✓
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 DOCUMENT LINKS:
 ────────────────
