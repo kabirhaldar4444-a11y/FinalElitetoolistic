@@ -106,54 +106,35 @@ const ServiceDeliveryManager = () => {
     }
   }, [candidate?.id, isKycCompleted]);
 
-  // Toggle individual step when clicked
+  // Toggle steps cumulatively up to clicked step
   const handleToggleStep = (stepId) => {
     setCompletedSteps(prev => {
-      const next = new Set(prev);
-      if (next.has(stepId)) {
-        next.delete(stepId);
+      let nextArr = [];
+      const currentHighest = Math.max(0, ...Array.from(prev));
+      // If clicking the current highest milestone, step back by 1
+      if (currentHighest === stepId && prev.has(stepId)) {
+        for (let i = 1; i < stepId; i++) {
+          nextArr.push(i);
+        }
       } else {
-        next.add(stepId);
+        // Check all milestones from 1 up to stepId
+        for (let i = 1; i <= stepId; i++) {
+          nextArr.push(i);
+        }
       }
 
-      const arr = Array.from(next);
+      const next = new Set(nextArr);
       if (candidate?.id) {
-        localStorage.setItem(`service_delivery_steps_${candidate.id}`, JSON.stringify(arr));
+        localStorage.setItem(`service_delivery_steps_${candidate.id}`, JSON.stringify(nextArr));
         // Silently update Supabase profile if possible
         supabase
           .from('profiles')
-          .update({ service_delivery_steps: arr })
+          .update({ service_delivery_steps: nextArr })
           .eq('id', candidate.id)
           .then(() => {});
       }
       return next;
     });
-  };
-
-  const handleCheckAll = () => {
-    const all = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    setCompletedSteps(all);
-    if (candidate?.id) {
-      localStorage.setItem(`service_delivery_steps_${candidate.id}`, JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9]));
-      supabase
-        .from('profiles')
-        .update({ service_delivery_steps: [1, 2, 3, 4, 5, 6, 7, 8, 9] })
-        .eq('id', candidate.id)
-        .then(() => {});
-    }
-  };
-
-  const handleUncheckAll = () => {
-    const empty = new Set();
-    setCompletedSteps(empty);
-    if (candidate?.id) {
-      localStorage.setItem(`service_delivery_steps_${candidate.id}`, JSON.stringify([]));
-      supabase
-        .from('profiles')
-        .update({ service_delivery_steps: [] })
-        .eq('id', candidate.id)
-        .then(() => {});
-    }
   };
 
   const handleSelectCandidate = (newId) => {
@@ -266,8 +247,8 @@ const ServiceDeliveryManager = () => {
               </h1>
             </div>
 
-            {/* Right: Status Pill & Quick Controls */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+            {/* Right: Status Pill */}
+            <div className="flex items-center shrink-0">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50/80 border border-emerald-200 text-emerald-800 shadow-sm">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
                 <span className={`w-2 h-2 rounded-full ${completedSteps.size === 9 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]'}`} />
@@ -275,38 +256,7 @@ const ServiceDeliveryManager = () => {
                   {completedSteps.size === 9 ? 'Service Delivery Completed' : `Milestones: ${completedSteps.size}/9`}
                 </span>
               </div>
-
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 rounded-full p-1 shadow-inner">
-                <button 
-                  type="button"
-                  onClick={handleCheckAll}
-                  title="Mark all 9 milestones completed"
-                  className="px-3 py-1 rounded-full text-[10px] font-bold text-emerald-700 hover:bg-emerald-100/60 transition-all active:scale-95"
-                >
-                  Check All
-                </button>
-                <span className="text-slate-300">|</span>
-                <button 
-                  type="button"
-                  onClick={handleUncheckAll}
-                  title="Uncheck all milestones"
-                  className="px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 hover:bg-slate-200 transition-all active:scale-95"
-                >
-                  Reset
-                </button>
-              </div>
             </div>
-          </div>
-
-          {/* Interactive Hint */}
-          <div className="pt-4 flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1.5 font-medium">
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1120.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5" /></svg>
-              Click on any milestone to check or uncheck it live
-            </span>
-            <span className="font-bold text-slate-600 hidden sm:inline">
-              {completedSteps.size} of 9 Milestones Completed
-            </span>
           </div>
 
           {/* 9 Live Steps Progress Timeline (Clickable) */}
@@ -331,7 +281,7 @@ const ServiceDeliveryManager = () => {
                       key={step.id} 
                       type="button"
                       onClick={() => handleToggleStep(step.id)}
-                      title={`Click to ${isChecked ? 'uncheck' : 'check'} Step ${step.id}: ${step.label}`}
+                      title={`Step ${step.id}: ${step.label} (${isChecked ? 'Completed' : 'Click to complete up to this step'})`}
                       className="flex flex-col items-center text-center w-24 relative z-10 group/step cursor-pointer outline-none transition-transform active:scale-95"
                     >
                       
