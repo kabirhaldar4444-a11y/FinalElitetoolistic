@@ -29,6 +29,9 @@ const ServiceDeliveryManager = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Set of checked step IDs (1 to 9)
+  const [completedSteps, setCompletedSteps] = useState(new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+
   useEffect(() => {
     fetchCandidates();
   }, [id]);
@@ -36,7 +39,6 @@ const ServiceDeliveryManager = () => {
   const fetchCandidates = async () => {
     setLoading(true);
     try {
-      // Fetch all candidate profiles so admin can switch easily
       const { data: candidatesList, error: listError } = await supabase
         .from('profiles')
         .select('*')
@@ -47,7 +49,6 @@ const ServiceDeliveryManager = () => {
       setAllCandidates(candidatesList || []);
 
       if (id) {
-        // Fetch specific candidate
         const selected = (candidatesList || []).find(c => c.id === id);
         if (selected) {
           setCandidate(selected);
@@ -61,7 +62,6 @@ const ServiceDeliveryManager = () => {
           setCandidate(data);
         }
       } else if (candidatesList && candidatesList.length > 0) {
-        // Default to first candidate if no ID in URL
         setCandidate(candidatesList[0]);
       } else {
         setCandidate(null);
@@ -74,14 +74,95 @@ const ServiceDeliveryManager = () => {
     }
   };
 
-  const handleSelectCandidate = (newId) => {
-    navigate(`/admin/servicedelivery/${newId}`);
-  };
-
   const isKycCompleted = !!(
     candidate?.profile_completed ||
     (candidate?.profile_photo_url && candidate?.aadhaar_front_url && candidate?.aadhaar_back_url)
   );
+
+  // Load saved step status from localStorage or candidate record
+  useEffect(() => {
+    if (!candidate?.id) return;
+    const storageKey = `service_delivery_steps_${candidate.id}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setCompletedSteps(new Set(parsed));
+          return;
+        }
+      } catch (e) {}
+    }
+
+    if (candidate.service_delivery_steps && Array.isArray(candidate.service_delivery_steps)) {
+      setCompletedSteps(new Set(candidate.service_delivery_steps));
+    } else {
+      // Default: if KYC verified, all 9 checked; else check first step
+      if (isKycCompleted) {
+        setCompletedSteps(new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+      } else {
+        setCompletedSteps(new Set([1]));
+      }
+    }
+  }, [candidate?.id, isKycCompleted]);
+
+  // Toggle individual step when clicked
+  const handleToggleStep = (stepId) => {
+    setCompletedSteps(prev => {
+      const next = new Set(prev);
+      if (next.has(stepId)) {
+        next.delete(stepId);
+      } else {
+        next.add(stepId);
+      }
+
+      const arr = Array.from(next);
+      if (candidate?.id) {
+        localStorage.setItem(`service_delivery_steps_${candidate.id}`, JSON.stringify(arr));
+        // Silently update Supabase profile if possible
+        supabase
+          .from('profiles')
+          .update({ service_delivery_steps: arr })
+          .eq('id', candidate.id)
+          .then(() => {});
+      }
+      return next;
+    });
+  };
+
+  const handleCheckAll = () => {
+    const all = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    setCompletedSteps(all);
+    if (candidate?.id) {
+      localStorage.setItem(`service_delivery_steps_${candidate.id}`, JSON.stringify([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+      supabase
+        .from('profiles')
+        .update({ service_delivery_steps: [1, 2, 3, 4, 5, 6, 7, 8, 9] })
+        .eq('id', candidate.id)
+        .then(() => {});
+    }
+  };
+
+  const handleUncheckAll = () => {
+    const empty = new Set();
+    setCompletedSteps(empty);
+    if (candidate?.id) {
+      localStorage.setItem(`service_delivery_steps_${candidate.id}`, JSON.stringify([]));
+      supabase
+        .from('profiles')
+        .update({ service_delivery_steps: [] })
+        .eq('id', candidate.id)
+        .then(() => {});
+    }
+  };
+
+  const handleSelectCandidate = (newId) => {
+    navigate(`/admin/servicedelivery/${newId}`);
+  };
+
+  // Calculate highest step checked for gradient line width
+  const maxStep = steps.reduce((max, s) => completedSteps.has(s.id) ? Math.max(max, s.id) : max, 0);
+  const progressPercent = completedSteps.size === 9 ? 100 : maxStep === 0 ? 0 : Math.round(((maxStep - 1) / (steps.length - 1)) * 100);
 
   if (loading) {
     return (
@@ -149,11 +230,11 @@ const ServiceDeliveryManager = () => {
           )}
         </div>
 
-        {/* HERO CARD: 9-Step Service Delivery (Matches Reference Screenshot) */}
+        {/* HERO CARD: 9-Step Service Delivery (Interactive Clickable Steps) */}
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] p-8 md:p-12 relative overflow-hidden">
           
           {/* Card Top: Candidate Info, Title, Status */}
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 pb-12 border-b border-slate-100/80">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 pb-10 border-b border-slate-100/80">
             {/* Left: Avatar + Candidate Details */}
             <div className="flex items-center gap-4 w-full lg:w-auto">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 border-2 border-white shadow-md flex items-center justify-center overflow-hidden shrink-0">
@@ -185,77 +266,113 @@ const ServiceDeliveryManager = () => {
               </h1>
             </div>
 
-            {/* Right: Status Pill */}
-            <div className="shrink-0">
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-emerald-50/80 border border-emerald-200 text-emerald-800 shadow-sm">
+            {/* Right: Status Pill & Quick Controls */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50/80 border border-emerald-200 text-emerald-800 shadow-sm">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <span className={`w-2 h-2 rounded-full ${completedSteps.size === 9 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]'}`} />
                 <span className="text-xs font-black tracking-tight text-emerald-700">
-                  {isKycCompleted ? 'Service Delivery Completed' : 'Pending Verification'}
+                  {completedSteps.size === 9 ? 'Service Delivery Completed' : `Milestones: ${completedSteps.size}/9`}
                 </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 rounded-full p-1 shadow-inner">
+                <button 
+                  type="button"
+                  onClick={handleCheckAll}
+                  title="Mark all 9 milestones completed"
+                  className="px-3 py-1 rounded-full text-[10px] font-bold text-emerald-700 hover:bg-emerald-100/60 transition-all active:scale-95"
+                >
+                  Check All
+                </button>
+                <span className="text-slate-300">|</span>
+                <button 
+                  type="button"
+                  onClick={handleUncheckAll}
+                  title="Uncheck all milestones"
+                  className="px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 hover:bg-slate-200 transition-all active:scale-95"
+                >
+                  Reset
+                </button>
               </div>
             </div>
           </div>
 
-          {/* 9 Live Steps Progress Timeline */}
-          <div className="pt-10 overflow-x-auto pb-4 scrollbar-thin">
+          {/* Interactive Hint */}
+          <div className="pt-4 flex items-center justify-between text-xs text-slate-400">
+            <span className="flex items-center gap-1.5 font-medium">
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1120.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5" /></svg>
+              Click on any milestone to check or uncheck it live
+            </span>
+            <span className="font-bold text-slate-600 hidden sm:inline">
+              {completedSteps.size} of 9 Milestones Completed
+            </span>
+          </div>
+
+          {/* 9 Live Steps Progress Timeline (Clickable) */}
+          <div className="pt-8 overflow-x-auto pb-6 scrollbar-thin">
             <div className="min-w-[950px] px-6 relative">
               
               {/* Background & Progress Gradient Track */}
               <div className="absolute top-[48px] left-[65px] right-[65px] h-[3px] bg-slate-200 -z-0">
                 <div 
-                  className={`h-full transition-all duration-1000 ${
-                    isKycCompleted 
-                      ? 'w-full bg-gradient-to-r from-purple-500 via-blue-500 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]' 
-                      : 'w-1/3 bg-gradient-to-r from-purple-500 to-blue-500'
-                  }`} 
+                  className="h-full transition-all duration-500 bg-gradient-to-r from-purple-500 via-blue-500 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]" 
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
 
               {/* 9 Milestone Columns */}
               <div className="relative flex items-start justify-between">
                 {steps.map((step) => {
-                  const isCompleted = isKycCompleted || step.id <= 3;
+                  const isChecked = completedSteps.has(step.id);
 
                   return (
-                    <div key={step.id} className="flex flex-col items-center text-center w-24 relative z-10 group">
+                    <button
+                      key={step.id} 
+                      type="button"
+                      onClick={() => handleToggleStep(step.id)}
+                      title={`Click to ${isChecked ? 'uncheck' : 'check'} Step ${step.id}: ${step.label}`}
+                      className="flex flex-col items-center text-center w-24 relative z-10 group/step cursor-pointer outline-none transition-transform active:scale-95"
+                    >
                       
                       {/* Top Step Number Circle */}
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border transition-all duration-500 bg-white ${
-                        isCompleted 
-                          ? 'border-emerald-500 text-emerald-600 shadow-sm' 
-                          : 'border-slate-300 text-slate-400'
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border transition-all duration-300 bg-white ${
+                        isChecked 
+                          ? 'border-emerald-500 text-emerald-600 bg-emerald-50/50 shadow-sm' 
+                          : 'border-slate-300 text-slate-400 group-hover/step:border-emerald-400 group-hover/step:text-emerald-600'
                       }`}>
                         {step.id}
                       </div>
 
                       {/* Vertical Drop Connector */}
-                      <div className={`w-[2px] h-3.5 transition-colors duration-500 ${
-                        isCompleted ? 'bg-emerald-500' : 'bg-slate-300'
+                      <div className={`w-[2px] h-3.5 transition-colors duration-300 ${
+                        isChecked ? 'bg-emerald-500' : 'bg-slate-300 group-hover/step:bg-emerald-300'
                       }`} />
 
-                      {/* Main Track Node (Green Checkmark) */}
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 border-white transition-all duration-500 shadow-md ${
-                        isCompleted 
-                          ? 'bg-emerald-500 text-white shadow-emerald-500/30 scale-105' 
-                          : 'bg-slate-200 text-slate-400'
+                      {/* Main Track Node (Green Checkmark when Checked) */}
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 border-white transition-all duration-300 shadow-md ${
+                        isChecked 
+                          ? 'bg-emerald-500 text-white shadow-emerald-500/30 scale-105 group-hover/step:scale-110' 
+                          : 'bg-white border-2 border-slate-300 text-slate-300 group-hover/step:border-emerald-400 group-hover/step:bg-emerald-50/50 group-hover/step:text-emerald-500 group-hover/step:scale-105'
                       }`}>
-                        {isCompleted ? (
+                        {isChecked ? (
                           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         ) : (
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" className="opacity-0 group-hover/step:opacity-100 transition-opacity">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
                         )}
                       </div>
 
                       {/* Step Label */}
-                      <p className={`mt-4 text-[11px] font-bold capitalize tracking-tight leading-snug max-w-[95px] break-words transition-colors duration-500 ${
-                        isCompleted ? 'text-slate-800' : 'text-slate-400'
+                      <p className={`mt-4 text-[11px] font-bold capitalize tracking-tight leading-snug max-w-[95px] break-words transition-colors duration-300 ${
+                        isChecked ? 'text-slate-900 font-black' : 'text-slate-400 font-medium group-hover/step:text-slate-700'
                       }`}>
                         {step.label}
                       </p>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -268,34 +385,51 @@ const ServiceDeliveryManager = () => {
         {/* DETAILS SECTION: KYC Deliverables & Upload Previews */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
           
-          {/* Card 1: Deliverables Checklist */}
+          {/* Card 1: Deliverables Checklist (Also Clickable) */}
           <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">KYC Status Checklist</h3>
-            <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Milestone Verification</h3>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                {completedSteps.size}/9 Active
+              </span>
+            </div>
+            <div className="space-y-2">
               {[
-                { label: "Step 01: Admission Confirmation", present: true },
-                { label: "Step 02: Document KYC (Aadhaar)", present: !!(candidate.aadhaar_front_url && candidate.aadhaar_back_url) },
-                { label: "Step 03: Video KYC / Live Photo", present: !!(candidate.profile_photo_url || candidate.video_statement_url) },
-                { label: "Step 04: GST Invoice Generation", present: isKycCompleted },
-                { label: "Step 05: PDF Study Material Release", present: isKycCompleted },
-                { label: "Step 06: Enrollment Certificate", present: isKycCompleted },
-                { label: "Step 07: Video Lectures Delivered", present: isKycCompleted },
-                { label: "Step 08: Final Exam Login Shared", present: isKycCompleted },
-                { label: "Step 09: Result & PC Delivered", present: isKycCompleted }
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2 px-3 bg-slate-50/60 rounded-xl border border-slate-100/80 text-xs">
-                  <span className="font-semibold text-slate-700">{item.label}</span>
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border ${
-                    item.present ? 'bg-emerald-50 text-emerald-500 border-emerald-200' : 'bg-amber-50 text-amber-500 border-amber-200'
-                  }`}>
-                    {item.present ? (
-                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                    ) : (
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    )}
-                  </span>
-                </div>
-              ))}
+                { id: 1, label: "Step 01: Admission Confirmation" },
+                { id: 2, label: "Step 02: Document KYC Verification" },
+                { id: 3, label: "Step 03: Video KYC Authentication" },
+                { id: 4, label: "Step 04: GST Invoice Delivered" },
+                { id: 5, label: "Step 05: PDF Study Material Shared" },
+                { id: 6, label: "Step 06: Enrollment Certificate Issued" },
+                { id: 7, label: "Step 07: Video Lectures Delivered" },
+                { id: 8, label: "Step 08: Final Exam Login Shared" },
+                { id: 9, label: "Step 09: Result & PC Delivered" }
+              ].map((item) => {
+                const isChecked = completedSteps.has(item.id);
+                return (
+                  <button 
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleToggleStep(item.id)}
+                    className="w-full flex items-center justify-between py-2 px-3 bg-slate-50/60 hover:bg-slate-100 rounded-xl border border-slate-100/80 text-xs transition-all text-left cursor-pointer group"
+                  >
+                    <span className={`font-semibold transition-colors ${isChecked ? 'text-slate-900' : 'text-slate-500'}`}>
+                      {item.label}
+                    </span>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border transition-all ${
+                      isChecked 
+                        ? 'bg-emerald-50 text-emerald-500 border-emerald-200 shadow-sm' 
+                        : 'bg-white text-slate-300 border-slate-200 group-hover:border-emerald-300 group-hover:text-emerald-400'
+                    }`}>
+                      {isChecked ? (
+                        <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      ) : (
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-emerald-400" />
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
