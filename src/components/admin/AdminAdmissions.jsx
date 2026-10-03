@@ -353,7 +353,7 @@ const AdminAdmissions = ({ user, profile }) => {
                       {/* Contact */}
                       <td className="p-4">
                         <p className="font-semibold text-[color:var(--text-dark)]">{app.email}</p>
-                        <p className="text-[11px] text-[color:var(--text-light)]">{app.phone}</p>
+                        {app.phone && <p className="text-[11px] text-[color:var(--text-light)]">{app.phone}</p>}
                       </td>
 
                       {/* Course */}
@@ -462,7 +462,7 @@ const AdminAdmissions = ({ user, profile }) => {
               </div>
               <div>
                 <h3 className="text-2xl font-black tracking-tight">{selectedAdmission.full_name}</h3>
-                <p className="text-xs text-slate-400 mt-0.5">{selectedAdmission.email} • {selectedAdmission.phone}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{selectedAdmission.email}{selectedAdmission.phone ? ` • ${selectedAdmission.phone}` : ''}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className={`px-3 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider ${
                     selectedAdmission.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : selectedAdmission.status === 'rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
