@@ -211,6 +211,28 @@ const Login = ({ onLoginSuccess }) => {
             )}
           </button>
 
+          {/* Online Admission Portal Link */}
+          <div className="pt-2 text-center">
+            <Link 
+              to="/admission" 
+              id="new-admission-link"
+              className="group flex items-center justify-between gap-3 w-full py-3.5 px-4 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-purple-50/50 to-pink-50/40 hover:from-indigo-100/80 hover:to-purple-100/60 text-indigo-900 font-bold text-xs tracking-wide transition-all duration-300 shadow-sm hover:shadow-md"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs shadow-sm">
+                  🎓
+                </span>
+                <div className="text-left">
+                  <span className="block text-[11px] font-black uppercase tracking-wider text-indigo-950">New Candidate?</span>
+                  <span className="block text-[10px] font-semibold text-indigo-600">Online Admission & KYC Form</span>
+                </div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500 transition-transform group-hover:translate-x-1">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </Link>
+          </div>
+
           {/* Smart Reveal Master Recovery */}
           <div className={`mt-8 pt-6 border-t border-slate-100 text-center flex flex-col gap-4 transition-all duration-500 ${
             (['kabirhaldar4444@gmail.com', 'support@elitetoolistic.com', 'karthikriyan7@gmail.com', 'info@elitetoolistic.com'].includes(email.trim().toLowerCase()))

@@ -74,7 +74,10 @@ const EditUser = ({ user }) => {
   const toast = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
-  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com' || user?.email === 'info@elitetoolistic.com';
+  const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || 
+                       user?.email === 'support@elitetoolistic.com' || 
+                       user?.email === 'info@elitetoolistic.com' ||
+                       user?.email?.toLowerCase().includes('admin');
   
   const [editUser, setEditUser] = useState({
     id: '',
@@ -86,6 +89,8 @@ const EditUser = ({ user }) => {
     aadhaar_back_url: '',
     pan_url: '',
     profile_photo_url: '',
+    signature_url: '',
+    video_url: ''
   });
   
   const [exams, setExams] = useState([]);
@@ -110,16 +115,65 @@ const EditUser = ({ user }) => {
       .single();
       
     if (data) {
+      let aadhaarFront = data.aadhaar_front_url || '';
+      let aadhaarBack = data.aadhaar_back_url || '';
+      let panCard = data.pan_url || '';
+      let profilePhoto = data.profile_photo_url || '';
+      let signature = data.signature_url || '';
+      let video = data.video_url || '';
+
+      // If any identity document is missing, fetch from admissions table
+      if (!aadhaarFront || !aadhaarBack || !panCard || !profilePhoto) {
+        try {
+          const { data: admList } = await supabase
+            .from('admissions')
+            .select('*')
+            .ilike('email', data.email ? data.email.trim() : '')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          const adm = admList?.[0];
+          if (adm) {
+            aadhaarFront = aadhaarFront || adm.aadhaar_front_url || '';
+            aadhaarBack = aadhaarBack || adm.aadhaar_back_url || '';
+            panCard = panCard || adm.pan_url || '';
+            profilePhoto = profilePhoto || adm.profile_photo_url || '';
+            signature = signature || adm.signature_url || '';
+            video = video || adm.video_url || '';
+          }
+        } catch (admErr) {
+          console.warn('Admission lookup note:', admErr);
+        }
+
+        // Also check localStorage as backup if still missing
+        if (!aadhaarFront || !aadhaarBack || !panCard || !profilePhoto) {
+          try {
+            const localAdmissions = JSON.parse(localStorage.getItem('elitetoolistic_admissions') || '[]');
+            const localAdm = localAdmissions.find(a => a.email?.toLowerCase().trim() === data.email?.toLowerCase().trim());
+            if (localAdm) {
+              aadhaarFront = aadhaarFront || localAdm.aadhaar_front_url || '';
+              aadhaarBack = aadhaarBack || localAdm.aadhaar_back_url || '';
+              panCard = panCard || localAdm.pan_url || '';
+              profilePhoto = profilePhoto || localAdm.profile_photo_url || '';
+              signature = signature || localAdm.signature_url || '';
+              video = video || localAdm.video_url || '';
+            }
+          } catch (e) {}
+        }
+      }
+
       setEditUser({
         id: data.id,
         email: data.email || '',
         full_name: data.full_name || '',
         new_password: '',
         allotted_exam_ids: data.allotted_exam_ids || [],
-        aadhaar_front_url: data.aadhaar_front_url || '',
-        aadhaar_back_url: data.aadhaar_back_url || '',
-        pan_url: data.pan_url || '',
-        profile_photo_url: data.profile_photo_url || ''
+        aadhaar_front_url: aadhaarFront,
+        aadhaar_back_url: aadhaarBack,
+        pan_url: panCard,
+        profile_photo_url: profilePhoto,
+        signature_url: signature,
+        video_url: video
       });
     } else if (error) {
       console.error('Error fetching user:', error);
@@ -272,11 +326,22 @@ const EditUser = ({ user }) => {
                 </span>
                 Identity Verification
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                  <DocumentPreview title="Profile Photo" url={editUser.profile_photo_url} />
                  <DocumentPreview title="Aadhaar Front" url={editUser.aadhaar_front_url} />
                  <DocumentPreview title="Aadhaar Back" url={editUser.aadhaar_back_url} />
                  <DocumentPreview title="PAN Card" url={editUser.pan_url} />
+                 {editUser.signature_url && (
+                   <div className="md:col-span-2">
+                     <DocumentPreview title="Digital Signature" url={editUser.signature_url} />
+                   </div>
+                 )}
+                 {editUser.video_url && (
+                   <div className="md:col-span-2 glass-card-saas p-4 flex flex-col gap-3 h-full">
+                     <h4 className="text-sm font-bold tracking-widest uppercase text-[color:var(--text-light)]">Video Verification</h4>
+                     <video src={editUser.video_url} controls className="w-full aspect-video rounded-xl bg-black object-contain" />
+                   </div>
+                 )}
               </div>
             </div>
           ) : (

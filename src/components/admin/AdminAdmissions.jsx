@@ -306,17 +306,19 @@ const AdminAdmissions = ({ user, profile }) => {
             <p className="text-xs text-[color:var(--text-light)]">Try adjusting your search terms or filter selection.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto w-full scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 pb-2">
+            <table className="w-full min-w-[1050px] text-left text-xs border-collapse">
               <thead className="bg-black/5 dark:bg-white/5 border-b border-[color:var(--glass-border)] text-[color:var(--text-light)] uppercase tracking-wider font-bold">
                 <tr>
-                  <th className="p-4">Candidate</th>
-                  <th className="p-4">Contact</th>
-                  <th className="p-4">Course</th>
-                  <th className="p-4">Location</th>
-                  <th className="p-4">Live Video</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
+                  <th className="p-3.5">Candidate</th>
+                  <th className="p-3.5">Contact</th>
+                  <th className="p-3.5">Course</th>
+                  <th className="p-3.5">Location</th>
+                  <th className="p-3.5">Live Video</th>
+                  <th className="p-3.5">Status</th>
+                  <th className="p-3.5 text-right sticky right-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] z-20 min-w-[230px]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[color:var(--glass-border)]">
@@ -325,10 +327,10 @@ const AdminAdmissions = ({ user, profile }) => {
                   const photoUrl = getPhotoUrl(app);
 
                   return (
-                    <tr key={app.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <tr key={app.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
                       
                       {/* Candidate */}
-                      <td className="p-4">
+                      <td className="p-3.5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center font-bold text-white text-xs flex-shrink-0 relative group">
                             {photoUrl ? (
@@ -351,23 +353,23 @@ const AdminAdmissions = ({ user, profile }) => {
                       </td>
 
                       {/* Contact */}
-                      <td className="p-4">
+                      <td className="p-3.5">
                         <p className="font-semibold text-[color:var(--text-dark)]">{app.email}</p>
                         {app.phone && <p className="text-[11px] text-[color:var(--text-light)]">{app.phone}</p>}
                       </td>
 
                       {/* Course */}
-                      <td className="p-4 font-bold text-[color:var(--text-dark)]">
+                      <td className="p-3.5 font-bold text-[color:var(--text-dark)] max-w-[200px] truncate" title={app.course_name}>
                         {app.course_name}
                       </td>
 
                       {/* Location */}
-                      <td className="p-4 text-[color:var(--text-light)] font-medium">
+                      <td className="p-3.5 text-[color:var(--text-light)] font-medium max-w-[180px] truncate" title={`${app.city}, ${app.state} (${app.pincode})`}>
                         {app.city}, {app.state} ({app.pincode})
                       </td>
 
                       {/* Video Status Badge */}
-                      <td className="p-4">
+                      <td className="p-3.5">
                         {videoUrl ? (
                           <button
                             onClick={() => setSelectedAdmission(app)}
@@ -382,7 +384,7 @@ const AdminAdmissions = ({ user, profile }) => {
                       </td>
 
                       {/* Status Badge */}
-                      <td className="p-4">
+                      <td className="p-3.5">
                         <span className={`px-3 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider ${
                           app.status === 'approved' 
                             ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30' 
@@ -394,11 +396,11 @@ const AdminAdmissions = ({ user, profile }) => {
                         </span>
                       </td>
 
-                      {/* Actions */}
-                      <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                      {/* Actions - Sticky on the Right */}
+                      <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap sticky right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] z-10 group-hover:bg-slate-50/95 dark:group-hover:bg-slate-800/95 transition-colors">
                         <button 
                           onClick={() => setSelectedAdmission(app)}
-                          className="bg-primary-600/10 hover:bg-primary-600 text-primary-500 hover:text-white px-3 py-1.5 rounded-lg font-bold transition-all text-xs"
+                          className="bg-primary-600/10 hover:bg-primary-600 text-primary-500 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs"
                         >
                           👁️ View Details
                         </button>
@@ -407,13 +409,13 @@ const AdminAdmissions = ({ user, profile }) => {
                           <>
                             <button 
                               onClick={() => openApproveModal(app)}
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-bold transition-all text-xs"
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs"
                             >
                               ✓ Approve
                             </button>
                             <button 
                               onClick={() => handleReject(app)}
-                              className="bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white px-3 py-1.5 rounded-lg font-bold transition-all text-xs"
+                              className="bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs"
                             >
                               ✕ Reject
                             </button>
@@ -422,7 +424,7 @@ const AdminAdmissions = ({ user, profile }) => {
 
                         <button 
                           onClick={() => handleDelete(app.id)}
-                          className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-1.5 rounded-lg font-bold transition-all"
+                          className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-1.5 rounded-lg font-bold transition-all inline-flex items-center justify-center align-middle"
                           title="Delete record"
                         >
                           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>

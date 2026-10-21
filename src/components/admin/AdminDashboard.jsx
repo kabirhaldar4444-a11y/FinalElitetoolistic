@@ -38,7 +38,7 @@ const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh, 
       <div className="absolute top-0 -left-12 w-[30rem] h-[30rem] bg-primary-600/10 rounded-full blur-[128px] animate-blob pointer-events-none"></div>
       <div className="absolute top-1/4 -right-12 w-[30rem] h-[30rem] bg-indigo-600/10 rounded-full blur-[128px] animate-blob animation-delay-2000 pointer-events-none"></div>
 
-      <div className="relative z-10 max-w-7xl mx-auto animate-fade-in">
+      <div className={`relative z-10 mx-auto animate-fade-in transition-all duration-300 ${activeTab === 'admissions' ? 'max-w-[1440px]' : 'max-w-7xl'}`}>
         {/* Header Title */}
         <div className="mb-10 text-center md:text-left">
           <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-clip-text text-transparent mb-2" style={{ backgroundImage: 'linear-gradient(to right, var(--text-dark), var(--text-light))' }}>

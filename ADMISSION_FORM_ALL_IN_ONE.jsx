@@ -1026,8 +1026,10 @@ ACCEPTED BY CANDIDATE: YES ✓
 SUPPORTING EVIDENCE:
 ---------------------
 • IP Address: ${userIp || 'Not captured'}
-• Live Video Statement:
+• Candidate Profile Photo:
 ${photoUrl || 'N/A'}
+• Live Video Statement:
+${videoUrl || 'N/A'}
 • Aadhaar Card (Front):
 ${frontUrl || 'N/A'}
 • Aadhaar Card (Back):

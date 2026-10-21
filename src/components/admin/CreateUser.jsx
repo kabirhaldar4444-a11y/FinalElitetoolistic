@@ -44,9 +44,11 @@ const CreateUser = ({ user, profile, initialRole = 'candidate', isPage = false }
       const { createClient } = await import('@supabase/supabase-js');
       
       // Create a secondary client that DOES NOT save session data (Admin stays logged in)
+      const targetUrl = import.meta.env.VITE_SUPABASE_URL || 'https://yfsirevgniajjjdgsgsk.supabase.co';
+      const targetKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlmc2lyZXZnbmlhampqZGdzZ3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODYzODUsImV4cCI6MjA5NzE2MjM4NX0.IzohNG_S3dUcNw96ebbZ0c-EivTK35XnFneHOap4-R4';
       const supabaseAdmin = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        targetUrl,
+        targetKey,
         { auth: { persistSession: false } }
       );
 

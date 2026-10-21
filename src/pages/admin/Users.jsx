@@ -51,20 +51,36 @@ const Users = ({ user, profile: activeProfile }) => {
       query = query.eq('role', 'candidate');
     }
 
-    const [usersResponse, submissionsResponse] = await Promise.all([
+    const [usersResponse, submissionsResponse, admissionsResponse] = await Promise.all([
       query,
-      supabase.from('submissions').select('user_id')
+      supabase.from('submissions').select('user_id'),
+      supabase.from('admissions').select('*')
     ]);
 
     const { data: usersData, error: usersError } = usersResponse;
     const { data: submissionsData } = submissionsResponse;
+    const { data: admissionsData } = admissionsResponse;
 
     if (usersError) console.error('fetchUsers error:', usersError.message);
     
     if (usersData) {
+      const localAdmissions = JSON.parse(localStorage.getItem('elitetoolistic_admissions') || '[]');
       const usersWithCounts = usersData.map(u => {
         const completedCount = submissionsData ? submissionsData.filter(s => s.user_id === u.id).length : 0;
-        return { ...u, completed_courses_count: completedCount };
+        const matchingAdm = (admissionsData || []).find(a => a.email?.toLowerCase().trim() === u.email?.toLowerCase().trim()) ||
+                            localAdmissions.find(a => a.email?.toLowerCase().trim() === u.email?.toLowerCase().trim());
+        return { 
+          ...u, 
+          aadhaar_front_url: u.aadhaar_front_url || matchingAdm?.aadhaar_front_url || null,
+          aadhaar_back_url: u.aadhaar_back_url || matchingAdm?.aadhaar_back_url || null,
+          pan_url: u.pan_url || matchingAdm?.pan_url || null,
+          profile_photo_url: u.profile_photo_url || matchingAdm?.profile_photo_url || null,
+          signature_url: u.signature_url || matchingAdm?.signature_url || null,
+          video_url: u.video_url || matchingAdm?.video_url || null,
+          address: u.address || matchingAdm?.address || null,
+          phone: u.phone || matchingAdm?.phone || null,
+          completed_courses_count: completedCount 
+        };
       });
       setUsers(usersWithCounts);
     }
@@ -138,18 +154,33 @@ const Users = ({ user, profile: activeProfile }) => {
   };
 
   const handleViewCandidate = async (u) => {
-    if (isStaffAdmin) {
-      const { data } = await supabase
-        .from('admissions')
-        .select('ip_address')
-        .eq('email', u.email)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      const ip = data?.[0]?.ip_address || 'Not available';
-      setSelectedUser({ ...u, ip_address: ip });
-    } else {
-      setSelectedUser(u);
+    let candidateData = { ...u };
+    if (!candidateData.aadhaar_front_url || !candidateData.aadhaar_back_url || !candidateData.pan_url || !candidateData.ip_address) {
+      try {
+        const { data } = await supabase
+          .from('admissions')
+          .select('*')
+          .ilike('email', u.email ? u.email.trim() : '')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const adm = data?.[0];
+        if (adm) {
+          candidateData.aadhaar_front_url = candidateData.aadhaar_front_url || adm.aadhaar_front_url;
+          candidateData.aadhaar_back_url = candidateData.aadhaar_back_url || adm.aadhaar_back_url;
+          candidateData.pan_url = candidateData.pan_url || adm.pan_url;
+          candidateData.profile_photo_url = candidateData.profile_photo_url || adm.profile_photo_url;
+          candidateData.signature_url = candidateData.signature_url || adm.signature_url;
+          candidateData.video_url = candidateData.video_url || adm.video_url;
+          candidateData.address = candidateData.address || adm.address;
+          candidateData.phone = candidateData.phone || adm.phone;
+          candidateData.ip_address = candidateData.ip_address || adm.ip_address;
+        }
+      } catch (err) {}
     }
+    if (isStaffAdmin && !candidateData.ip_address) {
+      candidateData.ip_address = 'Not available';
+    }
+    setSelectedUser(candidateData);
   };
 
   const filteredUsers = users.filter(u =>
