@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import supabase from '../../utils/supabase';
+import { useToast, useConfirm } from '../common/AlertProvider';
 
 const AdminAdmissions = ({ user, profile }) => {
+  const toast = useToast();
+  const confirm = useConfirm();
+
   const [admissions, setAdmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -157,12 +161,12 @@ const AdminAdmissions = ({ user, profile }) => {
         setSelectedAdmission(prev => ({ ...prev, status: 'approved' }));
       }
 
-      alert(`Application for ${targetApp.full_name} has been APPROVED!${autoCreateAccount ? ` Student account created with password: ${candidatePassword}` : ''}`);
+      toast(`Application for ${targetApp.full_name} has been approved!${autoCreateAccount ? ` Student account created with password: ${candidatePassword}` : ''}`, 'success');
       setShowApproveModal(false);
       setTargetApp(null);
     } catch (err) {
       console.error('Approve application error:', err);
-      alert(err.message || 'Failed to approve application.');
+      toast(err.message || 'Failed to approve application.', 'error');
     } finally {
       setActionLoading(false);
       setActionMsg('');
@@ -171,7 +175,14 @@ const AdminAdmissions = ({ user, profile }) => {
 
   // Handle Reject Application
   const handleReject = async (app) => {
-    if (!window.confirm(`Are you sure you want to reject the application for ${app.full_name}?`)) return;
+    const isConfirmed = await confirm({
+      title: 'Reject Admission Application',
+      message: `Are you sure you want to reject the application for ${app.full_name}?`,
+      confirmText: 'Yes, Reject',
+      cancelText: 'Cancel',
+      type: 'warning'
+    });
+    if (!isConfirmed) return;
 
     try {
       await supabase
@@ -188,14 +199,23 @@ const AdminAdmissions = ({ user, profile }) => {
       if (selectedAdmission && selectedAdmission.id === app.id) {
         setSelectedAdmission(prev => ({ ...prev, status: 'rejected' }));
       }
+      toast(`Application for ${app.full_name} has been marked as rejected.`, 'info');
     } catch (err) {
       console.error('Reject error:', err);
+      toast(err.message || 'Failed to reject application.', 'error');
     }
   };
 
   // Handle Delete Application
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to permanently delete this admission record?')) return;
+  const handleDelete = async (id, fullName = 'this candidate') => {
+    const isConfirmed = await confirm({
+      title: 'Delete Admission Record',
+      message: `Are you sure you want to permanently delete the admission record for ${fullName}? This action cannot be undone.`,
+      confirmText: 'Yes, Delete',
+      cancelText: 'Cancel',
+      type: 'error'
+    });
+    if (!isConfirmed) return;
 
     try {
       await supabase.from('admissions').delete().eq('id', id);
@@ -208,8 +228,10 @@ const AdminAdmissions = ({ user, profile }) => {
       if (selectedAdmission && selectedAdmission.id === id) {
         setSelectedAdmission(null);
       }
+      toast('Admission record has been permanently deleted.', 'success');
     } catch (err) {
       console.error('Delete error:', err);
+      toast(err.message || 'Failed to delete admission record.', 'error');
     }
   };
 
@@ -316,7 +338,7 @@ const AdminAdmissions = ({ user, profile }) => {
                   <th className="p-3.5">Location</th>
                   <th className="p-3.5">Live Video</th>
                   <th className="p-3.5">Status</th>
-                  <th className="p-3.5 text-right sticky right-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] z-20 min-w-[230px]">
+                  <th className="p-3.5 text-right sticky right-0 bg-slate-50/95 backdrop-blur-md shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.06)] z-20 min-w-[230px] text-slate-500">
                     Actions
                   </th>
                 </tr>
@@ -332,11 +354,11 @@ const AdminAdmissions = ({ user, profile }) => {
                       {/* Candidate */}
                       <td className="p-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center font-bold text-white text-xs flex-shrink-0 relative group">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center font-bold text-slate-700 text-xs flex-shrink-0 relative group shadow-sm">
                             {photoUrl ? (
                               <img src={photoUrl} alt="" className="w-full h-full object-cover" />
                             ) : videoUrl ? (
-                              <div className="w-full h-full bg-indigo-900/60 flex items-center justify-center text-indigo-300 font-bold">
+                              <div className="w-full h-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold">
                                 🎥
                               </div>
                             ) : (
@@ -373,7 +395,7 @@ const AdminAdmissions = ({ user, profile }) => {
                         {videoUrl ? (
                           <button
                             onClick={() => setSelectedAdmission(app)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-[10px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/30 hover:bg-indigo-500/20 transition-all cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition-all cursor-pointer shadow-sm"
                           >
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             🎥 Play Video
@@ -387,20 +409,20 @@ const AdminAdmissions = ({ user, profile }) => {
                       <td className="p-3.5">
                         <span className={`px-3 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider ${
                           app.status === 'approved' 
-                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30' 
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                             : app.status === 'rejected'
-                            ? 'bg-rose-500/10 text-rose-500 border border-rose-500/30'
-                            : 'bg-amber-500/10 text-amber-500 border border-amber-500/30'
+                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
                         }`}>
                           {app.status || 'pending'}
                         </span>
                       </td>
 
-                      {/* Actions - Sticky on the Right */}
-                      <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap sticky right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.12)] z-10 group-hover:bg-slate-50/95 dark:group-hover:bg-slate-800/95 transition-colors">
+                      {/* Actions - Sticky on the Right (Light background matching table) */}
+                      <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap sticky right-0 bg-white/95 backdrop-blur-md shadow-[-6px_0_12px_-4px_rgba(0,0,0,0.06)] z-10 group-hover:bg-slate-50/95 transition-colors">
                         <button 
                           onClick={() => setSelectedAdmission(app)}
-                          className="bg-primary-600/10 hover:bg-primary-600 text-primary-500 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs"
+                          className="bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white border border-indigo-100 px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs"
                         >
                           👁️ View Details
                         </button>
@@ -409,13 +431,13 @@ const AdminAdmissions = ({ user, profile }) => {
                           <>
                             <button 
                               onClick={() => openApproveModal(app)}
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs"
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs shadow-sm"
                             >
                               ✓ Approve
                             </button>
                             <button 
                               onClick={() => handleReject(app)}
-                              className="bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs"
+                              className="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 px-2.5 py-1.5 rounded-lg font-bold transition-all text-xs"
                             >
                               ✕ Reject
                             </button>
@@ -423,8 +445,8 @@ const AdminAdmissions = ({ user, profile }) => {
                         )}
 
                         <button 
-                          onClick={() => handleDelete(app.id)}
-                          className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-1.5 rounded-lg font-bold transition-all inline-flex items-center justify-center align-middle"
+                          onClick={() => handleDelete(app.id, app.full_name)}
+                          className="bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 p-1.5 rounded-lg font-bold transition-all inline-flex items-center justify-center align-middle"
                           title="Delete record"
                         >
                           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -440,22 +462,22 @@ const AdminAdmissions = ({ user, profile }) => {
         )}
       </div>
 
-      {/* FULL DETAILS & VIDEO PLAYER MODAL */}
+      {/* FULL DETAILS & VIDEO PLAYER MODAL (LIGHT THEME MATCHING BG) */}
       {selectedAdmission && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 text-white rounded-[2.5rem] p-6 md:p-8 max-w-4xl w-full max-h-[92vh] overflow-y-auto animate-fade-in relative shadow-2xl space-y-6">
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200/90 text-slate-900 rounded-[2.5rem] p-6 md:p-8 max-w-4xl w-full max-h-[92vh] overflow-y-auto animate-fade-in relative shadow-2xl space-y-6">
             
             {/* Close Button */}
             <button 
               onClick={() => setSelectedAdmission(null)}
-              className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-9 h-9 rounded-full flex items-center justify-center transition-all z-10"
+              className="absolute top-6 right-6 text-slate-400 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 w-9 h-9 rounded-full flex items-center justify-center transition-all z-10 font-bold"
             >
               ✕
             </button>
 
             {/* Candidate Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-slate-800 pb-5">
-              <div className="w-16 h-16 rounded-2xl bg-slate-800 overflow-hidden flex items-center justify-center font-bold text-2xl text-primary-400 border border-slate-700 flex-shrink-0 shadow-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-slate-100 pb-5">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 overflow-hidden flex items-center justify-center font-bold text-2xl text-indigo-600 border border-indigo-100 flex-shrink-0 shadow-sm">
                 {getPhotoUrl(selectedAdmission) ? (
                   <img src={getPhotoUrl(selectedAdmission)} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -463,11 +485,15 @@ const AdminAdmissions = ({ user, profile }) => {
                 )}
               </div>
               <div>
-                <h3 className="text-2xl font-black tracking-tight">{selectedAdmission.full_name}</h3>
-                <p className="text-xs text-slate-400 mt-0.5">{selectedAdmission.email}{selectedAdmission.phone ? ` • ${selectedAdmission.phone}` : ''}</p>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">{selectedAdmission.full_name}</h3>
+                <p className="text-xs text-slate-500 mt-0.5">{selectedAdmission.email}{selectedAdmission.phone ? ` • ${selectedAdmission.phone}` : ''}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className={`px-3 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider ${
-                    selectedAdmission.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : selectedAdmission.status === 'rejected' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    selectedAdmission.status === 'approved' 
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                      : selectedAdmission.status === 'rejected' 
+                      ? 'bg-rose-50 text-rose-700 border border-rose-200' 
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
                   }`}>
                     Status: {selectedAdmission.status || 'pending'}
                   </span>
@@ -476,18 +502,18 @@ const AdminAdmissions = ({ user, profile }) => {
               </div>
             </div>
 
-            {/* LIVE CANDIDATE VIDEO STATEMENT SECTION (ULTRA MODERN PLAYER) */}
-            <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/40 p-5 md:p-6 rounded-3xl border border-indigo-500/30 shadow-2xl space-y-4">
+            {/* LIVE CANDIDATE VIDEO STATEMENT SECTION */}
+            <div className="bg-gradient-to-br from-slate-50 via-indigo-50/20 to-purple-50/20 p-5 md:p-6 rounded-3xl border border-indigo-100 shadow-sm space-y-4">
               
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
-                  <h4 className="font-black text-sm uppercase tracking-wider text-white flex items-center gap-2">
+                  <h4 className="font-black text-sm uppercase tracking-wider text-slate-900 flex items-center gap-2">
                     <span>🎥</span> Candidate Live Video Statement
                   </h4>
                 </div>
                 {getVideoUrl(selectedAdmission) && (
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2.5 py-1 rounded-full border border-emerald-500/30 uppercase tracking-widest">
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2.5 py-1 rounded-full border border-emerald-200 uppercase tracking-widest">
                     RECORDING VERIFIED
                   </span>
                 )}
@@ -495,7 +521,7 @@ const AdminAdmissions = ({ user, profile }) => {
 
               {getVideoUrl(selectedAdmission) ? (
                 <div className="space-y-3">
-                  <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-2xl group">
+                  <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-200 shadow-md group">
                     <video 
                       src={getVideoUrl(selectedAdmission)} 
                       controls 
@@ -506,8 +532,8 @@ const AdminAdmissions = ({ user, profile }) => {
                   </div>
 
                   {/* Video Actions Toolbar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 p-3 rounded-2xl border border-slate-800/80 text-xs">
-                    <span className="text-slate-400 font-medium text-[11px]">
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 text-xs shadow-sm">
+                    <span className="text-slate-600 font-semibold text-[11px]">
                       📹 Recorded Live Video Verification Statement
                     </span>
                     <div className="flex items-center gap-2">
@@ -515,14 +541,14 @@ const AdminAdmissions = ({ user, profile }) => {
                         href={getVideoUrl(selectedAdmission)} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 text-[11px]"
+                        className="bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white border border-indigo-200 px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 text-[11px]"
                       >
                         ↗ Open Video in New Tab
                       </a>
                       <a 
                         href={getVideoUrl(selectedAdmission)} 
                         download={`candidate_video_${selectedAdmission.full_name}.webm`}
-                        className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 text-[11px]"
+                        className="bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 text-[11px]"
                       >
                         📥 Download Video
                       </a>
@@ -530,11 +556,11 @@ const AdminAdmissions = ({ user, profile }) => {
                   </div>
                 </div>
               ) : (
-                <div className="h-44 bg-slate-950/80 rounded-2xl border border-dashed border-slate-800 flex flex-col items-center justify-center text-center p-6 space-y-2">
-                  <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-2xl text-slate-500">
+                <div className="h-44 bg-slate-50 rounded-2xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-center p-6 space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-2xl text-slate-400">
                     📹
                   </div>
-                  <p className="text-sm font-bold text-slate-300">No Live Video Statement Recorded</p>
+                  <p className="text-sm font-bold text-slate-700">No Live Video Statement Recorded</p>
                   <p className="text-xs text-slate-500 max-w-sm">The candidate did not attach a live camera statement with this application submission.</p>
                 </div>
               )}
@@ -542,29 +568,29 @@ const AdminAdmissions = ({ user, profile }) => {
             </div>
 
             {/* Candidate Metadata Info Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
-              <div><strong className="text-slate-400">Course Applied:</strong> <span className="text-white font-bold">{selectedAdmission.course_name}</span></div>
-              <div><strong className="text-slate-400">Date Applied:</strong> <span className="text-white font-bold">{new Date(selectedAdmission.created_at || Date.now()).toLocaleString()}</span></div>
-              <div><strong className="text-slate-400">City / State:</strong> <span className="text-white font-bold">{selectedAdmission.city}, {selectedAdmission.state} ({selectedAdmission.pincode})</span></div>
-              <div><strong className="text-slate-400">IP Address:</strong> <span className="text-white font-bold">{selectedAdmission.ip_address || 'Not captured'}</span></div>
-              <div className="md:col-span-2"><strong className="text-slate-400">Residential Address:</strong> <span className="text-white font-bold">{selectedAdmission.address || 'N/A'}</span></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-slate-50/90 p-5 rounded-2xl border border-slate-200/80">
+              <div><strong className="text-slate-500 font-medium">Course Applied:</strong> <span className="text-slate-900 font-bold ml-1">{selectedAdmission.course_name}</span></div>
+              <div><strong className="text-slate-500 font-medium">Date Applied:</strong> <span className="text-slate-900 font-bold ml-1">{new Date(selectedAdmission.created_at || Date.now()).toLocaleString()}</span></div>
+              <div><strong className="text-slate-500 font-medium">City / State:</strong> <span className="text-slate-900 font-bold ml-1">{selectedAdmission.city}, {selectedAdmission.state} ({selectedAdmission.pincode})</span></div>
+              <div><strong className="text-slate-500 font-medium">IP Address:</strong> <span className="text-slate-900 font-bold ml-1">{selectedAdmission.ip_address || 'Not captured'}</span></div>
+              <div className="md:col-span-2"><strong className="text-slate-500 font-medium">Residential Address:</strong> <span className="text-slate-900 font-bold ml-1">{selectedAdmission.address || 'N/A'}</span></div>
             </div>
 
             {/* Verification Documents Gallery */}
             <div className="space-y-4">
-              <h4 className="font-black text-sm uppercase tracking-wider text-slate-300 flex items-center gap-2">
+              <h4 className="font-black text-sm uppercase tracking-wider text-slate-800 flex items-center gap-2">
                 <span>📄</span> Identity Verification Documents & Digital Signature
               </h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* Digital Signature */}
-                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] font-bold text-slate-400 block mb-2">Digital Signature</span>
+                <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80">
+                  <span className="text-[11px] font-bold text-slate-600 block mb-2">Digital Signature</span>
                   {selectedAdmission.signature_url ? (
                     <div 
                       onClick={() => setPreviewMedia({ type: 'image', title: 'Digital Signature', url: selectedAdmission.signature_url })}
-                      className="bg-white p-3 rounded-xl h-40 flex items-center justify-center cursor-pointer hover:opacity-90 transition-all border border-slate-700 group relative"
+                      className="bg-white p-3 rounded-xl h-40 flex items-center justify-center cursor-pointer hover:opacity-95 transition-all border border-slate-200 group relative shadow-sm"
                     >
                       <img src={selectedAdmission.signature_url} alt="Signature" className="max-h-full object-contain" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-all rounded-xl">
@@ -572,17 +598,17 @@ const AdminAdmissions = ({ user, profile }) => {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-40 bg-slate-900 flex items-center justify-center text-slate-600 rounded-xl font-medium text-xs">No Signature Provided</div>
+                    <div className="h-40 bg-slate-100 flex items-center justify-center text-slate-400 rounded-xl font-medium text-xs border border-dashed border-slate-200">No Signature Provided</div>
                   )}
                 </div>
 
                 {/* Aadhaar Front */}
-                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] font-bold text-slate-400 block mb-2">Aadhaar Card (Front)</span>
+                <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80">
+                  <span className="text-[11px] font-bold text-slate-600 block mb-2">Aadhaar Card (Front)</span>
                   {selectedAdmission.aadhaar_front_url ? (
                     <div 
                       onClick={() => setPreviewMedia({ type: 'image', title: 'Aadhaar Card (Front)', url: selectedAdmission.aadhaar_front_url })}
-                      className="relative h-40 rounded-xl overflow-hidden cursor-pointer group border border-slate-800"
+                      className="relative h-40 rounded-xl overflow-hidden cursor-pointer group border border-slate-200 shadow-sm"
                     >
                       <img src={selectedAdmission.aadhaar_front_url} alt="Aadhaar Front" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-all">
@@ -590,17 +616,17 @@ const AdminAdmissions = ({ user, profile }) => {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-40 bg-slate-900 flex items-center justify-center text-slate-600 rounded-xl font-medium text-xs">No Document Uploaded</div>
+                    <div className="h-40 bg-slate-100 flex items-center justify-center text-slate-400 rounded-xl font-medium text-xs border border-dashed border-slate-200">No Document Uploaded</div>
                   )}
                 </div>
 
                 {/* Aadhaar Back */}
-                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] font-bold text-slate-400 block mb-2">Aadhaar Card (Back)</span>
+                <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80">
+                  <span className="text-[11px] font-bold text-slate-600 block mb-2">Aadhaar Card (Back)</span>
                   {selectedAdmission.aadhaar_back_url ? (
                     <div 
                       onClick={() => setPreviewMedia({ type: 'image', title: 'Aadhaar Card (Back)', url: selectedAdmission.aadhaar_back_url })}
-                      className="relative h-40 rounded-xl overflow-hidden cursor-pointer group border border-slate-800"
+                      className="relative h-40 rounded-xl overflow-hidden cursor-pointer group border border-slate-200 shadow-sm"
                     >
                       <img src={selectedAdmission.aadhaar_back_url} alt="Aadhaar Back" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-all">
@@ -608,17 +634,17 @@ const AdminAdmissions = ({ user, profile }) => {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-40 bg-slate-900 flex items-center justify-center text-slate-600 rounded-xl font-medium text-xs">No Document Uploaded</div>
+                    <div className="h-40 bg-slate-100 flex items-center justify-center text-slate-400 rounded-xl font-medium text-xs border border-dashed border-slate-200">No Document Uploaded</div>
                   )}
                 </div>
 
                 {/* PAN Card */}
-                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                  <span className="text-[11px] font-bold text-slate-400 block mb-2">PAN Card Document</span>
+                <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80">
+                  <span className="text-[11px] font-bold text-slate-600 block mb-2">PAN Card Document</span>
                   {selectedAdmission.pan_url ? (
                     <div 
                       onClick={() => setPreviewMedia({ type: 'image', title: 'PAN Card Document', url: selectedAdmission.pan_url })}
-                      className="relative h-40 rounded-xl overflow-hidden cursor-pointer group border border-slate-800 bg-slate-900 p-2"
+                      className="relative h-40 rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-white p-2 shadow-sm"
                     >
                       <img src={selectedAdmission.pan_url} alt="PAN Card" className="w-full h-full object-contain" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-all rounded-xl">
@@ -626,7 +652,7 @@ const AdminAdmissions = ({ user, profile }) => {
                       </div>
                     </div>
                   ) : (
-                    <div className="h-40 bg-slate-900 flex items-center justify-center text-slate-600 rounded-xl font-medium text-xs">No Document Uploaded</div>
+                    <div className="h-40 bg-slate-100 flex items-center justify-center text-slate-400 rounded-xl font-medium text-xs border border-dashed border-slate-200">No Document Uploaded</div>
                   )}
                 </div>
 
@@ -634,7 +660,7 @@ const AdminAdmissions = ({ user, profile }) => {
             </div>
 
             {/* Modal Bottom Actions */}
-            <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-slate-200">
               {selectedAdmission.status === 'pending' && (
                 <>
                   <button 
@@ -645,7 +671,7 @@ const AdminAdmissions = ({ user, profile }) => {
                   </button>
                   <button 
                     onClick={() => handleReject(selectedAdmission)}
-                    className="bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-rose-600/20"
+                    className="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 font-bold py-3 px-6 rounded-xl text-xs flex items-center gap-2 transition-all"
                   >
                     ✕ Reject Application
                   </button>
@@ -653,7 +679,7 @@ const AdminAdmissions = ({ user, profile }) => {
               )}
               <button 
                 onClick={() => setSelectedAdmission(null)}
-                className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl text-xs"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-6 rounded-xl text-xs transition-all"
               >
                 Close Modal
               </button>
@@ -691,39 +717,39 @@ const AdminAdmissions = ({ user, profile }) => {
         document.body
       )}
 
-      {/* APPROVE CONFIRMATION MODAL */}
+      {/* APPROVE CONFIRMATION MODAL (LIGHT THEME) */}
       {showApproveModal && targetApp && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 text-white rounded-[2rem] p-6 md:p-8 max-w-md w-full animate-fade-in shadow-2xl">
-            <h3 className="text-xl font-black mb-2 text-white flex items-center gap-2">
-              <span className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm">✓</span>
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 text-slate-900 rounded-[2rem] p-6 md:p-8 max-w-md w-full animate-fade-in shadow-2xl">
+            <h3 className="text-xl font-black mb-2 text-slate-900 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm border border-emerald-100">✓</span>
               Approve Admission
             </h3>
-            <p className="text-xs text-slate-400 mb-6">
-              You are approving the admission for <strong className="text-white">{targetApp.full_name}</strong> ({targetApp.email}).
+            <p className="text-xs text-slate-500 mb-6">
+              You are approving the admission for <strong className="text-slate-900">{targetApp.full_name}</strong> ({targetApp.email}).
             </p>
 
-            <label className="flex items-start gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 mb-4 cursor-pointer">
+            <label className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4 cursor-pointer">
               <input 
                 type="checkbox"
                 checked={autoCreateAccount}
                 onChange={(e) => setAutoCreateAccount(e.target.checked)}
-                className="mt-1 w-4 h-4 text-emerald-500 rounded border-slate-700 bg-slate-900"
+                className="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
               />
               <div className="text-xs">
-                <span className="font-bold text-white block">Auto-Create Candidate Account</span>
-                <span className="text-slate-400">Instantly creates student user login for exam portal.</span>
+                <span className="font-bold text-slate-900 block">Auto-Create Candidate Account</span>
+                <span className="text-slate-500">Instantly creates student user login for exam portal.</span>
               </div>
             </label>
 
             {autoCreateAccount && (
               <div className="space-y-2 mb-6">
-                <label className="text-[11px] font-bold text-slate-300 block uppercase tracking-wider">Candidate Password</label>
+                <label className="text-[11px] font-bold text-slate-500 block uppercase tracking-wider">Candidate Password</label>
                 <input 
                   type="text" 
                   value={candidatePassword}
                   onChange={(e) => setCandidatePassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white font-mono"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-mono focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
             )}
@@ -731,14 +757,14 @@ const AdminAdmissions = ({ user, profile }) => {
             <div className="flex justify-end gap-3">
               <button 
                 onClick={() => setShowApproveModal(false)}
-                className="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-5 rounded-xl text-xs transition-all"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleApprove}
                 disabled={actionLoading}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/30"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all"
               >
                 {actionLoading ? 'Processing...' : 'Confirm Approval'}
               </button>

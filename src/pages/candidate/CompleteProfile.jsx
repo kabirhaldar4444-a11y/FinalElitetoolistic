@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../../utils/supabase';
 import DisclaimerOverlay from '../../components/DisclaimerOverlay';
@@ -45,27 +45,48 @@ const INDIA_STATES_CITIES = {
 
 const STATES = Object.keys(INDIA_STATES_CITIES).sort();
 
-// Helper to capture a frame from an HTMLVideoElement
-const captureProfilePic = (videoEl) => {
+// Helper to robustly capture a real non-black frame from an HTMLVideoElement
+const captureProfilePic = async (videoEl) => {
   if (!videoEl) return null;
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = videoEl.videoWidth || 640;
-    canvas.height = videoEl.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    // Mirror drawing since webcam is mirrored
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        resolve(blob);
-      }, 'image/jpeg', 0.85);
-    });
-  } catch (err) {
-    console.error('Failed to capture frame:', err);
-    return null;
+
+  const extract = () => {
+    try {
+      const width = videoEl.videoWidth;
+      const height = videoEl.videoHeight;
+      if (!width || !height || videoEl.readyState < 2) {
+        return null;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      // Mirror frame horizontally to match selfie preview
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/jpeg', 0.92);
+      });
+    } catch (err) {
+      console.error('Failed to capture frame:', err);
+      return null;
+    }
+  };
+
+  let blob = await extract();
+  if (blob) return blob;
+
+  for (let i = 0; i < 8; i++) {
+    await new Promise((res) => setTimeout(res, 250));
+    blob = await extract();
+    if (blob) return blob;
   }
+  return null;
 };
 
 const CompleteProfile = ({ profile, user, onComplete }) => {
@@ -270,13 +291,53 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
     });
   };
 
+  // Sync camera stream to the video element whenever camera becomes active or stream changes
+  useEffect(() => {
+    if (showCamera && videoStream && videoRef.current) {
+      if (videoRef.current.srcObject !== videoStream) {
+        videoRef.current.srcObject = videoStream;
+      }
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn('Camera video play warning:', err);
+        });
+      }
+    }
+  }, [showCamera, videoStream]);
+
+  // Clean up media tracks on unmount
+  useEffect(() => {
+    return () => {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [videoStream]);
+
   const startCamera = async () => {
     setShowCamera(true);
     setError('');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        }, 
+        audio: true 
+      });
       setVideoStream(stream);
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(e => console.warn('play error:', e));
+      }
     } catch (err) {
       setError('Could not access camera or microphone: ' + err.message);
       setShowCamera(false);
@@ -291,22 +352,47 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
     setShowCamera(false);
   };
 
+  const captureSnapshot = async () => {
+    if (!videoRef.current) return null;
+    const blob = await captureProfilePic(videoRef.current);
+    if (blob) {
+      setProfilePhoto(blob);
+      setCapturedPhotoUrl(URL.createObjectURL(blob));
+      return blob;
+    }
+    return null;
+  };
+
   const startRecording = () => {
     if (!videoStream) return;
     recordedChunksRef.current = [];
 
     try {
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-        ? 'video/webm;codecs=vp9,opus'
-        : MediaRecorder.isTypeSupported('video/webm')
-        ? 'video/webm'
-        : 'video/mp4';
+      let mimeType = '';
+      const candidateTypes = [
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=vp9,opus',
+        'video/webm',
+        'video/mp4'
+      ];
+      for (const t of candidateTypes) {
+        if (MediaRecorder.isTypeSupported(t)) {
+          mimeType = t;
+          break;
+        }
+      }
 
-      const mediaRecorder = new MediaRecorder(videoStream, { 
-        mimeType,
-        videoBitsPerSecond: 25000000 // High-definition video recording bitrate
-      });
-      mediaRecorderRef.current = mediaRecorder;
+      const recorderOptions = mimeType ? { mimeType } : {};
+      try {
+        mediaRecorderRef.current = new MediaRecorder(videoStream, { 
+          ...recorderOptions,
+          videoBitsPerSecond: 2500000 
+        });
+      } catch (e) {
+        mediaRecorderRef.current = new MediaRecorder(videoStream, recorderOptions);
+      }
+
+      const mediaRecorder = mediaRecorderRef.current;
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
@@ -315,7 +401,8 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+        const recordedType = mimeType || 'video/webm';
+        const blob = new Blob(recordedChunksRef.current, { type: recordedType });
         
         // 500 MB Maximum File Size Check
         const maxSizeBytes = 500 * 1024 * 1024; // 500 MB
@@ -334,28 +421,28 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
       mediaRecorder.start(1000);
       setIsRecording(true);
       setRecordingTimer(0);
+      if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
         setRecordingTimer(prev => prev + 1);
       }, 1000);
 
-      // Capture profile photo snapshot from video stream after 1 second
+      // Auto capture profile photo snapshot from video stream after 1.5 seconds
       setTimeout(async () => {
-        if (videoRef.current) {
-          const photoBlob = await captureProfilePic(videoRef.current);
-          if (photoBlob) {
-            setProfilePhoto(photoBlob);
-            setCapturedPhotoUrl(URL.createObjectURL(photoBlob));
-          }
+        if (!profilePhoto && videoRef.current) {
+          await captureSnapshot();
         }
-      }, 1000);
+      }, 1500);
     } catch (err) {
       console.error('Error starting video recording:', err);
       setError('Failed to start video recording.');
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (mediaRecorderRef.current && isRecording) {
+      if (!profilePhoto && videoRef.current) {
+        await captureSnapshot();
+      }
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       if (timerRef.current) {
@@ -693,7 +780,22 @@ Submitted via Elitetoolistic Exam Portal`
                 {/* Camera Active View */}
                 {showCamera && (
                   <div className="relative max-w-md w-full h-64 bg-slate-950 rounded-3xl overflow-hidden shadow-2xl mb-4 border border-slate-800">
-                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
+                    <video 
+                      ref={(el) => {
+                        videoRef.current = el;
+                        if (el && videoStream && el.srcObject !== videoStream) {
+                          el.srcObject = videoStream;
+                          el.play().catch(() => {});
+                        }
+                      }} 
+                      autoPlay 
+                      playsInline 
+                      muted 
+                      className="w-full h-full object-cover scale-x-[-1]"
+                      onLoadedMetadata={(e) => {
+                        e.target.play().catch(() => {});
+                      }}
+                    />
                     
                     {isRecording && (
                       <div className="absolute top-4 left-4 bg-rose-600/90 text-white font-bold text-[11px] px-3 py-1 rounded-full flex items-center gap-2 animate-pulse shadow-lg backdrop-blur-md">
@@ -702,16 +804,33 @@ Submitted via Elitetoolistic Exam Portal`
                       </div>
                     )}
 
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                    {capturedPhotoUrl && (
+                      <div className="absolute top-4 right-4 bg-emerald-600/90 text-white font-bold text-[10px] px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg backdrop-blur-md">
+                        <span className="w-2 h-2 rounded-full bg-white"></span>
+                        Photo Captured
+                      </div>
+                    )}
+
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 w-max">
                       {!isRecording ? (
-                        <button 
-                          type="button" 
-                          onClick={startRecording} 
-                          className="bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] uppercase tracking-widest px-8 py-3 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2"
-                        >
-                          <span className="w-3 h-3 rounded-full bg-white"></span>
-                          Start Recording
-                        </button>
+                        <>
+                          <button 
+                            type="button" 
+                            onClick={startRecording} 
+                            className="bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] uppercase tracking-widest px-6 py-2.5 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                          >
+                            <span className="w-3 h-3 rounded-full bg-white"></span>
+                            Start Recording
+                          </button>
+                          <button
+                            type="button"
+                            onClick={captureSnapshot}
+                            title="Snap profile photo"
+                            className="bg-white/90 hover:bg-white text-slate-800 font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-full shadow-lg hover:scale-105 transition-all flex items-center gap-1.5"
+                          >
+                            📷 Snap Photo
+                          </button>
+                        </>
                       ) : (
                         <button 
                           type="button" 

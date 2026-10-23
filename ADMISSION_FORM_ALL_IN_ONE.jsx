@@ -76,6 +76,50 @@ const indianStates = [
   "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
 ];
 
+// Helper to robustly capture a real non-black frame from an HTMLVideoElement
+const captureFrameFromVideoElement = async (videoEl) => {
+  if (!videoEl) return null;
+
+  const extract = () => {
+    try {
+      const width = videoEl.videoWidth;
+      const height = videoEl.videoHeight;
+      if (!width || !height || videoEl.readyState < 2) {
+        return null;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      // Mirror frame horizontally to match selfie preview
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/jpeg', 0.92);
+      });
+    } catch (err) {
+      console.error('Failed to extract video frame:', err);
+      return null;
+    }
+  };
+
+  let blob = await extract();
+  if (blob) return blob;
+
+  for (let i = 0; i < 8; i++) {
+    await new Promise((res) => setTimeout(res, 250));
+    blob = await extract();
+    if (blob) return blob;
+  }
+  return null;
+};
+
 export default function AdmissionFormAllInOne({
   supabase = null,
   portalName = "Elite Toolistic",
@@ -102,6 +146,9 @@ export default function AdmissionFormAllInOne({
   const [stateName, setStateName] = useState('Select State');
   const [cityName, setCityName] = useState('');
   const [address, setAddress] = useState('');
+  const [isFetchingPincode, setIsFetchingPincode] = useState(false);
+  const [pincodeError, setPincodeError] = useState('');
+  const [pincodeSuccess, setPincodeSuccess] = useState('');
 
   // Step 2 Video Recording & Media
   const [videoStream, setVideoStream] = useState(null);
@@ -110,6 +157,8 @@ export default function AdmissionFormAllInOne({
   const [recordingTimer, setRecordingTimer] = useState(0);
   const [recordedVideoBlob, setRecordedVideoBlob] = useState(null);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState(null);
+  const [capturedPhotoBlob, setCapturedPhotoBlob] = useState(null);
+  const [capturedPhotoUrl, setCapturedPhotoUrl] = useState(null);
 
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -140,6 +189,91 @@ export default function AdmissionFormAllInOne({
       .catch(() => setUserIp('Not captured'));
   }, []);
 
+  // Sync camera stream to the video element whenever camera becomes active or stream changes
+  useEffect(() => {
+    if (isCameraActive && videoStream && videoRef.current) {
+      if (videoRef.current.srcObject !== videoStream) {
+        videoRef.current.srcObject = videoStream;
+      }
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn('Camera video play error:', err);
+        });
+      }
+    }
+  }, [isCameraActive, videoStream]);
+
+  // Clean up media tracks on unmount
+  useEffect(() => {
+    return () => {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [videoStream]);
+
+  // Fetch State and City from Pincode using api.postalpincode.in
+  const fetchAddressByPincode = async (pinValue) => {
+    const cleanPin = pinValue.replace(/\D/g, '').slice(0, 6);
+    if (cleanPin.length !== 6) return;
+
+    setIsFetchingPincode(true);
+    setPincodeError('');
+    setPincodeSuccess('');
+
+    try {
+      const response = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`);
+      const data = await response.json();
+
+      if (Array.isArray(data) && data[0] && data[0].Status === 'Success' && Array.isArray(data[0].PostOffice) && data[0].PostOffice.length > 0) {
+        const postOffice = data[0].PostOffice[0];
+        const state = postOffice.State || '';
+        const district = postOffice.District || postOffice.Name || '';
+
+        if (state) {
+          const matched = indianStates.find(s => s.toLowerCase() === state.trim().toLowerCase());
+          if (matched) {
+            setStateName(matched);
+          } else {
+            const partial = indianStates.find(s => 
+              s.toLowerCase().includes(state.trim().toLowerCase()) || 
+              state.trim().toLowerCase().includes(s.toLowerCase())
+            );
+            setStateName(partial || state.trim());
+          }
+        }
+
+        if (district) {
+          setCityName(district);
+        }
+
+        setPincodeSuccess(`Found: ${district ? `${district}, ` : ''}${state}`);
+      } else {
+        setPincodeError('Invalid PIN code or postal details not found.');
+      }
+    } catch (err) {
+      console.error('Postal PIN API fetch error:', err);
+      setPincodeError('Network error while fetching PIN code details.');
+    } finally {
+      setIsFetchingPincode(false);
+    }
+  };
+
+  const handlePincodeChange = (e) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setPincode(val);
+    setPincodeError('');
+    setPincodeSuccess('');
+
+    if (val.length === 6) {
+      fetchAddressByPincode(val);
+    }
+  };
+
   // Location Auto-Detect Handler
   const handleDetectLocation = () => {
     if ("geolocation" in navigator) {
@@ -151,9 +285,20 @@ export default function AdmissionFormAllInOne({
             const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
             const data = await res.json();
             if (data) {
-              if (data.postcode) setPincode(data.postcode);
-              if (data.principalSubdivision) setStateName(data.principalSubdivision);
-              if (data.city || data.locality) setCityName(data.city || data.locality);
+              if (data.postcode) {
+                const pin = data.postcode.replace(/\D/g, '').slice(0, 6);
+                setPincode(pin);
+                if (pin.length === 6) {
+                  fetchAddressByPincode(pin);
+                }
+              }
+              if (data.principalSubdivision && (!stateName || stateName === 'Select State')) {
+                const matched = indianStates.find(s => s.toLowerCase() === data.principalSubdivision.toLowerCase());
+                if (matched) setStateName(matched);
+              }
+              if ((data.city || data.locality) && !cityName) {
+                setCityName(data.city || data.locality);
+              }
             }
           } catch (e) {
             console.warn('Geocoding notice:', e);
@@ -170,14 +315,28 @@ export default function AdmissionFormAllInOne({
   const startCamera = async () => {
     try {
       setErrorMsg('');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        }, 
+        audio: true 
+      });
+
       setVideoStream(stream);
       setIsCameraActive(true);
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(e => console.warn('play error:', e));
       }
     } catch (err) {
       console.error('Camera/mic access error:', err);
+      setIsCameraActive(false);
       setErrorMsg('Camera and Microphone permissions are required to record your live video statement. Please allow permissions.');
     }
   };
@@ -190,22 +349,49 @@ export default function AdmissionFormAllInOne({
     setIsCameraActive(false);
   };
 
+  // Helper to capture profile photo from video stream
+  const captureSnapshot = async () => {
+    if (!videoRef.current) return null;
+    const blob = await captureFrameFromVideoElement(videoRef.current);
+    if (blob) {
+      setCapturedPhotoBlob(blob);
+      const url = URL.createObjectURL(blob);
+      setCapturedPhotoUrl(url);
+      return blob;
+    }
+    return null;
+  };
+
   const startRecording = () => {
     if (!videoStream) return;
     recordedChunksRef.current = [];
     
     try {
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-        ? 'video/webm;codecs=vp9,opus'
-        : MediaRecorder.isTypeSupported('video/webm')
-        ? 'video/webm'
-        : 'video/mp4';
+      let mimeType = '';
+      const candidateTypes = [
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=vp9,opus',
+        'video/webm',
+        'video/mp4'
+      ];
+      for (const t of candidateTypes) {
+        if (MediaRecorder.isTypeSupported(t)) {
+          mimeType = t;
+          break;
+        }
+      }
 
-      const mediaRecorder = new MediaRecorder(videoStream, { 
-        mimeType,
-        videoBitsPerSecond: 25000000 
-      });
-      mediaRecorderRef.current = mediaRecorder;
+      const recorderOptions = mimeType ? { mimeType } : {};
+      try {
+        mediaRecorderRef.current = new MediaRecorder(videoStream, {
+          ...recorderOptions,
+          videoBitsPerSecond: 2500000
+        });
+      } catch (e) {
+        mediaRecorderRef.current = new MediaRecorder(videoStream, recorderOptions);
+      }
+
+      const mediaRecorder = mediaRecorderRef.current;
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
@@ -214,7 +400,8 @@ export default function AdmissionFormAllInOne({
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+        const recordedType = mimeType || 'video/webm';
+        const blob = new Blob(recordedChunksRef.current, { type: recordedType });
         
         // 500 MB Size Limit Check
         const maxSizeBytes = 500 * 1024 * 1024;
@@ -233,17 +420,28 @@ export default function AdmissionFormAllInOne({
       mediaRecorder.start(1000);
       setIsRecording(true);
       setRecordingTimer(0);
+      if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
         setRecordingTimer(prev => prev + 1);
       }, 1000);
+
+      // Auto capture profile photo snapshot from video stream after 1.5s
+      setTimeout(async () => {
+        if (!capturedPhotoBlob && videoRef.current) {
+          await captureSnapshot();
+        }
+      }, 1500);
     } catch (err) {
       console.error('Error starting video recording:', err);
       setErrorMsg('Failed to start video recording. Please ensure camera/mic permissions are enabled.');
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (mediaRecorderRef.current && isRecording) {
+      if (!capturedPhotoBlob && videoRef.current) {
+        await captureSnapshot();
+      }
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       if (timerRef.current) {
@@ -256,6 +454,8 @@ export default function AdmissionFormAllInOne({
   const retakeVideo = () => {
     setRecordedVideoBlob(null);
     setRecordedVideoUrl(null);
+    setCapturedPhotoBlob(null);
+    setCapturedPhotoUrl(null);
     setRecordingTimer(0);
     startCamera();
   };
@@ -1184,7 +1384,17 @@ Submitted via Elitetoolistic Exam Portal`
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end">
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <a 
+                  href="/login" 
+                  className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors"
+                >
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                  </svg>
+                  <span>Already Registered? Back to Login</span>
+                </a>
+
                 <button 
                   type="submit"
                   className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-8 rounded-xl text-xs transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2"
@@ -1242,7 +1452,22 @@ Submitted via Elitetoolistic Exam Portal`
                   
                   {/* Live Camera View */}
                   {isCameraActive && !recordedVideoUrl && (
-                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
+                    <video 
+                      ref={(el) => {
+                        videoRef.current = el;
+                        if (el && videoStream && el.srcObject !== videoStream) {
+                          el.srcObject = videoStream;
+                          el.play().catch(() => {});
+                        }
+                      }} 
+                      autoPlay 
+                      playsInline 
+                      muted 
+                      className="w-full h-full object-cover scale-x-[-1]"
+                      onLoadedMetadata={(e) => {
+                        e.target.play().catch(() => {});
+                      }}
+                    />
                   )}
 
                   {/* Recorded Video Playback View */}
@@ -1250,18 +1475,36 @@ Submitted via Elitetoolistic Exam Portal`
                     <video src={recordedVideoUrl} controls className="w-full h-full object-contain bg-black"></video>
                   )}
 
+                  {/* Photo Captured Pill */}
+                  {capturedPhotoUrl && isCameraActive && (
+                    <div className="absolute top-4 right-4 bg-emerald-600/90 text-white font-bold text-[10px] px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg backdrop-blur-md">
+                      <span className="w-2 h-2 rounded-full bg-white"></span>
+                      Photo Captured
+                    </div>
+                  )}
+
                   {/* Camera Controls Overlay */}
                   {!recordedVideoUrl && isCameraActive && (
-                    <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-4 px-4">
+                    <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-3 px-4">
                       {!isRecording ? (
-                        <button 
-                          type="button" 
-                          onClick={startRecording}
-                          className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-2.5 rounded-full text-xs flex items-center gap-2 shadow-lg shadow-rose-600/40"
-                        >
-                          <span className="w-3 h-3 rounded-full bg-white animate-ping"></span>
-                          Start Recording
-                        </button>
+                        <>
+                          <button 
+                            type="button" 
+                            onClick={startRecording}
+                            className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-2.5 rounded-full text-xs flex items-center gap-2 shadow-lg shadow-rose-600/40"
+                          >
+                            <span className="w-3 h-3 rounded-full bg-white animate-ping"></span>
+                            Start Recording
+                          </button>
+                          <button
+                            type="button"
+                            onClick={captureSnapshot}
+                            title="Snap profile photo"
+                            className="bg-white/90 hover:bg-white text-slate-800 font-bold px-4 py-2.5 rounded-full text-xs shadow-md flex items-center gap-1.5"
+                          >
+                            📷 Snap Photo
+                          </button>
+                        </>
                       ) : (
                         <div className="flex items-center gap-4">
                           <span className="bg-rose-600/90 text-white text-xs font-mono font-bold px-4 py-2 rounded-full border border-rose-400/30 flex items-center gap-2">
@@ -1282,7 +1525,7 @@ Submitted via Elitetoolistic Exam Portal`
 
                   {/* Retake Action Bar */}
                   {recordedVideoUrl && (
-                    <div className="absolute top-4 right-4 z-10">
+                    <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
                       <button 
                         type="button"
                         onClick={retakeVideo}
@@ -1307,6 +1550,19 @@ Submitted via Elitetoolistic Exam Portal`
                     </div>
                   )}
                 </div>
+
+                {/* Profile Photo Display if Captured */}
+                {capturedPhotoUrl && !isCameraActive && (
+                  <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-slate-200">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-indigo-500 shadow-sm bg-slate-100 flex-shrink-0">
+                      <img src={capturedPhotoUrl} alt="Captured Profile" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <h6 className="text-xs font-bold text-slate-900">Captured Profile Photo</h6>
+                      <p className="text-[11px] text-slate-500">Automatically captured from your live video verification.</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* DUAL READ-ALOUD SCRIPT (ENGLISH & HINDI) */}
                 <div className="space-y-4 pt-2">
@@ -1363,15 +1619,36 @@ Submitted via Elitetoolistic Exam Portal`
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className={labelClass}>PIN Code *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className={labelClass}>PIN Code *</label>
+                      {isFetchingPincode && (
+                        <span className="text-[10px] text-indigo-600 font-bold flex items-center gap-1 animate-pulse">
+                          <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                          </svg>
+                          Fetching...
+                        </span>
+                      )}
+                    </div>
                     <input 
                       type="text" 
                       required
+                      maxLength={6}
                       placeholder="6-digit PIN"
                       value={pincode}
-                      onChange={(e) => setPincode(e.target.value)}
+                      onChange={handlePincodeChange}
                       className={inputClass}
                     />
+                    {pincodeError && (
+                      <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1">{pincodeError}</p>
+                    )}
+                    {pincodeSuccess && (
+                      <p className="text-[10px] text-emerald-600 font-bold mt-1 ml-1 flex items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                        {pincodeSuccess}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -1522,13 +1799,22 @@ Submitted via Elitetoolistic Exam Portal`
 
               {/* Bottom Actions */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <button 
-                  type="button" 
-                  onClick={() => setStep(1)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-6 rounded-xl text-xs"
-                >
-                  ← Back to Step 1
-                </button>
+                <div className="flex items-center gap-3">
+                  <button 
+                    type="button" 
+                    onClick={() => setStep(1)}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-6 rounded-xl text-xs"
+                  >
+                    ← Back to Step 1
+                  </button>
+
+                  <a 
+                    href="/login" 
+                    className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors px-2 py-1"
+                  >
+                    Back to Login
+                  </a>
+                </div>
 
                 <button 
                   type="submit"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import supabase from '../utils/supabase';
 
 // Indian States List
@@ -13,27 +13,51 @@ const indianStates = [
   "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
 ];
 
-// Helper to capture a frame from an HTMLVideoElement
-const captureProfilePic = (videoEl) => {
+// Helper to robustly capture a real non-black frame from an HTMLVideoElement
+const captureFrameFromVideoElement = async (videoEl) => {
   if (!videoEl) return null;
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = videoEl.videoWidth || 640;
-    canvas.height = videoEl.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    // Mirror drawing since webcam is mirrored
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        resolve(blob);
-      }, 'image/jpeg', 0.85);
-    });
-  } catch (err) {
-    console.error('Failed to capture frame:', err);
-    return null;
+
+  const extract = () => {
+    try {
+      const width = videoEl.videoWidth;
+      const height = videoEl.videoHeight;
+      // Ensure video is actively decoding frames and has real dimensions
+      if (!width || !height || videoEl.readyState < 2) {
+        return null;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      // Mirror frame horizontally to match the mirrored selfie webcam preview
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/jpeg', 0.92);
+      });
+    } catch (err) {
+      console.error('Failed to extract video frame:', err);
+      return null;
+    }
+  };
+
+  // 1. Try immediate extraction
+  let blob = await extract();
+  if (blob) return blob;
+
+  // 2. If video frames are still initializing, poll every 250ms up to 8 times (~2s)
+  for (let i = 0; i < 8; i++) {
+    await new Promise((res) => setTimeout(res, 250));
+    blob = await extract();
+    if (blob) return blob;
   }
+  return null;
 };
 
 const Admission = () => {
@@ -54,6 +78,9 @@ const Admission = () => {
   const [stateName, setStateName] = useState('Select State');
   const [cityName, setCityName] = useState('');
   const [address, setAddress] = useState('');
+  const [isFetchingPincode, setIsFetchingPincode] = useState(false);
+  const [pincodeError, setPincodeError] = useState('');
+  const [pincodeSuccess, setPincodeSuccess] = useState('');
 
   // Step 2 Video Recording & Media
   const [videoStream, setVideoStream] = useState(null);
@@ -92,6 +119,92 @@ const Admission = () => {
       .catch(() => setUserIp('Not captured'));
   }, []);
 
+  // Sync camera stream to the video element whenever camera becomes active or stream changes
+  useEffect(() => {
+    if (isCameraActive && videoStream && videoRef.current) {
+      if (videoRef.current.srcObject !== videoStream) {
+        videoRef.current.srcObject = videoStream;
+      }
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn('Camera video play was intercepted or requires interaction:', err);
+        });
+      }
+    }
+  }, [isCameraActive, videoStream]);
+
+  // Clean up media stream tracks when component unmounts
+  useEffect(() => {
+    return () => {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [videoStream]);
+
+  // Fetch State and City from Pincode using api.postalpincode.in
+  const fetchAddressByPincode = async (pinValue) => {
+    const cleanPin = pinValue.replace(/\D/g, '').slice(0, 6);
+    if (cleanPin.length !== 6) return;
+
+    setIsFetchingPincode(true);
+    setPincodeError('');
+    setPincodeSuccess('');
+
+    try {
+      const response = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`);
+      const data = await response.json();
+
+      if (Array.isArray(data) && data[0] && data[0].Status === 'Success' && Array.isArray(data[0].PostOffice) && data[0].PostOffice.length > 0) {
+        const postOffice = data[0].PostOffice[0];
+        const state = postOffice.State || '';
+        const district = postOffice.District || postOffice.Name || '';
+
+        // Match state accurately against indianStates
+        if (state) {
+          const matched = indianStates.find(s => s.toLowerCase() === state.trim().toLowerCase());
+          if (matched) {
+            setStateName(matched);
+          } else {
+            const partial = indianStates.find(s => 
+              s.toLowerCase().includes(state.trim().toLowerCase()) || 
+              state.trim().toLowerCase().includes(s.toLowerCase())
+            );
+            setStateName(partial || state.trim());
+          }
+        }
+
+        if (district) {
+          setCityName(district);
+        }
+
+        setPincodeSuccess(`Found: ${district ? `${district}, ` : ''}${state}`);
+      } else {
+        setPincodeError('Invalid PIN code or postal details not found.');
+      }
+    } catch (err) {
+      console.error('Postal PIN API fetch error:', err);
+      setPincodeError('Network error while fetching PIN code details.');
+    } finally {
+      setIsFetchingPincode(false);
+    }
+  };
+
+  const handlePincodeChange = (e) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setPincode(val);
+    setPincodeError('');
+    setPincodeSuccess('');
+
+    if (val.length === 6) {
+      fetchAddressByPincode(val);
+    }
+  };
+
   // Handle Location Detection
   const handleDetectLocation = () => {
     if ("geolocation" in navigator) {
@@ -103,9 +216,20 @@ const Admission = () => {
             const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
             const data = await res.json();
             if (data) {
-              if (data.postcode) setPincode(data.postcode);
-              if (data.principalSubdivision) setStateName(data.principalSubdivision);
-              if (data.city || data.locality) setCityName(data.city || data.locality);
+              if (data.postcode) {
+                const pin = data.postcode.replace(/\D/g, '').slice(0, 6);
+                setPincode(pin);
+                if (pin.length === 6) {
+                  fetchAddressByPincode(pin);
+                }
+              }
+              if (data.principalSubdivision && (!stateName || stateName === 'Select State')) {
+                const matched = indianStates.find(s => s.toLowerCase() === data.principalSubdivision.toLowerCase());
+                if (matched) setStateName(matched);
+              }
+              if ((data.city || data.locality) && !cityName) {
+                setCityName(data.city || data.locality);
+              }
             }
           } catch (e) {
             console.warn('Geocoding notice:', e);
@@ -122,15 +246,30 @@ const Admission = () => {
   const startCamera = async () => {
     try {
       setErrorMsg('');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        }, 
+        audio: true 
+      });
+
       setVideoStream(stream);
       setIsCameraActive(true);
+
+      // Immediately connect to video element if already in DOM
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(e => console.warn('Camera video play warning:', e));
       }
     } catch (err) {
       console.error('Camera/mic access error:', err);
-      setErrorMsg('Camera and Microphone permissions are required to record your live video statement. Please allow camera access.');
+      setIsCameraActive(false);
+      setErrorMsg('Camera and Microphone permissions are required to record your live video statement. Please allow camera and mic access in your browser.');
     }
   };
 
@@ -142,22 +281,49 @@ const Admission = () => {
     setIsCameraActive(false);
   };
 
+  // Helper to capture profile photo from video stream
+  const captureSnapshot = async () => {
+    if (!videoRef.current) return null;
+    const blob = await captureFrameFromVideoElement(videoRef.current);
+    if (blob) {
+      setCapturedPhotoBlob(blob);
+      const url = URL.createObjectURL(blob);
+      setCapturedPhotoUrl(url);
+      return blob;
+    }
+    return null;
+  };
+
   const startRecording = () => {
     if (!videoStream) return;
     recordedChunksRef.current = [];
     
     try {
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-        ? 'video/webm;codecs=vp9,opus'
-        : MediaRecorder.isTypeSupported('video/webm')
-        ? 'video/webm'
-        : 'video/mp4';
+      let mimeType = '';
+      const candidateTypes = [
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=vp9,opus',
+        'video/webm',
+        'video/mp4'
+      ];
+      for (const t of candidateTypes) {
+        if (MediaRecorder.isTypeSupported(t)) {
+          mimeType = t;
+          break;
+        }
+      }
 
-      const mediaRecorder = new MediaRecorder(videoStream, { 
-        mimeType,
-        videoBitsPerSecond: 25000000 // High-definition video recording bitrate
-      });
-      mediaRecorderRef.current = mediaRecorder;
+      const recorderOptions = mimeType ? { mimeType } : {};
+      try {
+        mediaRecorderRef.current = new MediaRecorder(videoStream, {
+          ...recorderOptions,
+          videoBitsPerSecond: 2500000 // 2.5 Mbps crisp 720p/1080p stream
+        });
+      } catch (e) {
+        mediaRecorderRef.current = new MediaRecorder(videoStream, recorderOptions);
+      }
+
+      const mediaRecorder = mediaRecorderRef.current;
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
@@ -166,7 +332,8 @@ const Admission = () => {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+        const recordedType = mimeType || 'video/webm';
+        const blob = new Blob(recordedChunksRef.current, { type: recordedType });
         
         // 500 MB Maximum File Size Check
         const maxSizeBytes = 500 * 1024 * 1024; // 500 MB
@@ -185,28 +352,29 @@ const Admission = () => {
       mediaRecorder.start(1000);
       setIsRecording(true);
       setRecordingTimer(0);
+      if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
         setRecordingTimer(prev => prev + 1);
       }, 1000);
 
-      // Capture profile photo snapshot from video stream after 1 second
+      // Auto-capture clear profile photo snapshot after 1.5 seconds if not yet captured
       setTimeout(async () => {
-        if (videoRef.current) {
-          const photoBlob = await captureProfilePic(videoRef.current);
-          if (photoBlob) {
-            setCapturedPhotoBlob(photoBlob);
-            setCapturedPhotoUrl(URL.createObjectURL(photoBlob));
-          }
+        if (!capturedPhotoBlob && videoRef.current) {
+          await captureSnapshot();
         }
-      }, 1000);
+      }, 1500);
     } catch (err) {
       console.error('Error starting video recording:', err);
       setErrorMsg('Failed to start video recording. Please ensure camera/mic permissions are enabled.');
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (mediaRecorderRef.current && isRecording) {
+      // If photo snapshot was not captured yet, take it now before stopping video stream tracks
+      if (!capturedPhotoBlob && videoRef.current) {
+        await captureSnapshot();
+      }
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       if (timerRef.current) {
@@ -1049,7 +1217,47 @@ Submitted via Elitetoolistic Exam Portal`
         ))}
       </div>
 
+      {/* Floating Top-Left Back to Login Button */}
+      <Link
+        to="/login"
+        id="admission-fixed-back-btn"
+        className="fixed top-5 left-5 z-50 group inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-md hover:shadow-lg text-slate-700 hover:text-indigo-600 font-bold text-xs transition-all duration-300 hover:-translate-x-0.5"
+      >
+        <svg
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+          className="transition-transform group-hover:-translate-x-1"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+        </svg>
+        <span>Back to Login</span>
+      </Link>
+
       <div className="relative z-10 w-full flex flex-col items-center">
+
+        {/* Top Secondary Navigation Bar (For Step 2) */}
+        {step === 2 && (
+          <div className="w-full max-w-5xl mx-auto pt-2 pb-2 px-4 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => { setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              id="admission-top-back-step1-btn"
+              className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-sm hover:shadow-md text-slate-600 hover:text-indigo-600 font-bold text-xs transition-all duration-300"
+            >
+              <span>← Edit Step 1</span>
+            </button>
+            <Link
+              to="/login"
+              className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors"
+            >
+              Back to Login
+            </Link>
+          </div>
+        )}
 
         {/* ── ELITETOOLISTIC LOGO & HEADER ── */}
         <div className="flex flex-col items-center text-center mt-2 mb-8">
@@ -1126,13 +1334,38 @@ Submitted via Elitetoolistic Exam Portal`
             </div>
 
             {/* Proceed Button */}
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
               <button 
                 type="submit"
                 className="w-full bg-gradient-to-r from-primary-500 to-indigo-600 hover:from-primary-600 hover:to-indigo-700 text-white font-black text-[10px] py-4 rounded-2xl uppercase tracking-[0.3em] transition-all duration-300 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-95"
               >
                 Proceed to Verification
               </button>
+
+              {/* Return to Login Card (matches Login.jsx style) */}
+              <div className="pt-2 text-center">
+                <Link 
+                  to="/login" 
+                  id="admission-card-back-login"
+                  className="group flex items-center justify-between gap-3 w-full py-3.5 px-4 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-purple-50/50 to-pink-50/40 hover:from-indigo-100/80 hover:to-purple-100/60 text-indigo-900 font-bold text-xs tracking-wide transition-all duration-300 shadow-sm hover:shadow-md"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs shadow-sm">
+                      🔑
+                    </span>
+                    <div className="text-left">
+                      <span className="block text-[11px] font-black uppercase tracking-wider text-indigo-950">Already Registered?</span>
+                      <span className="block text-[10px] font-semibold text-indigo-600">Back to Login & Exam Portal</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-indigo-600 font-bold">
+                    <span className="text-[10px] uppercase tracking-wider">Login</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-0.5">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </div>
+                </Link>
+              </div>
             </div>
 
           </form>
@@ -1169,7 +1402,22 @@ Submitted via Elitetoolistic Exam Portal`
                   {/* Camera Active View */}
                   {isCameraActive && (
                     <div className="relative max-w-md w-full h-64 bg-slate-950 rounded-3xl overflow-hidden shadow-2xl mb-4 border border-slate-800">
-                      <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
+                      <video 
+                        ref={(el) => {
+                          videoRef.current = el;
+                          if (el && videoStream && el.srcObject !== videoStream) {
+                            el.srcObject = videoStream;
+                            el.play().catch(() => {});
+                          }
+                        }} 
+                        autoPlay 
+                        playsInline 
+                        muted 
+                        className="w-full h-full object-cover scale-x-[-1]"
+                        onLoadedMetadata={(e) => {
+                          e.target.play().catch(() => {});
+                        }}
+                      />
                       
                       {isRecording && (
                         <div className="absolute top-4 left-4 bg-rose-600/90 text-white font-bold text-[11px] px-3 py-1 rounded-full flex items-center gap-2 animate-pulse shadow-lg backdrop-blur-md">
@@ -1178,16 +1426,34 @@ Submitted via Elitetoolistic Exam Portal`
                         </div>
                       )}
 
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                      {capturedPhotoUrl && (
+                        <div className="absolute top-4 right-4 bg-emerald-600/90 text-white font-bold text-[10px] px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg backdrop-blur-md">
+                          <span className="w-2 h-2 rounded-full bg-white"></span>
+                          Photo Captured
+                        </div>
+                      )}
+
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 w-max">
                         {!isRecording ? (
-                          <button 
-                            type="button" 
-                            onClick={startRecording} 
-                            className="bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] uppercase tracking-widest px-8 py-3 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2"
-                          >
-                            <span className="w-3 h-3 rounded-full bg-white"></span>
-                            Start Recording
-                          </button>
+                          <>
+                            <button 
+                              type="button" 
+                              onClick={startRecording} 
+                              className="bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] uppercase tracking-widest px-6 py-2.5 rounded-full shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                            >
+                              <span className="w-3 h-3 rounded-full bg-white"></span>
+                              Start Recording
+                            </button>
+                            <button
+                              type="button"
+                              onClick={captureSnapshot}
+                              title="Capture profile picture snapshot"
+                              className="bg-white/90 hover:bg-white text-slate-800 font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-full shadow-lg hover:scale-105 transition-all flex items-center gap-1.5"
+                            >
+                              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.039l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/></svg>
+                              Snap Photo
+                            </button>
+                          </>
                         ) : (
                           <button 
                             type="button" 
@@ -1212,7 +1478,7 @@ Submitted via Elitetoolistic Exam Portal`
                       {capturedPhotoUrl && (
                         <div className="flex flex-col items-center gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100 w-full animate-fade-in">
                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Captured Profile Photo</span>
-                          <div className="w-24 h-24 rounded-full overflow-hidden border border-slate-200 bg-white">
+                          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-indigo-500 shadow-md bg-white">
                             <img src={capturedPhotoUrl} alt="Profile Photo" className="w-full h-full object-cover" />
                           </div>
                         </div>
@@ -1295,15 +1561,36 @@ Submitted via Elitetoolistic Exam Portal`
               {/* Row: Pin Code, State, City */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className={labelClass}>PIN Code *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className={labelClass}>PIN Code *</label>
+                    {isFetchingPincode && (
+                      <span className="text-[10px] text-indigo-600 font-bold flex items-center gap-1 animate-pulse">
+                        <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        Fetching...
+                      </span>
+                    )}
+                  </div>
                   <input 
                     type="text" 
                     required
+                    maxLength={6}
                     placeholder="6-digit PIN"
                     value={pincode}
-                    onChange={(e) => setPincode(e.target.value)}
+                    onChange={handlePincodeChange}
                     className={inputClass}
                   />
+                  {pincodeError && (
+                    <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1">{pincodeError}</p>
+                  )}
+                  {pincodeSuccess && (
+                    <p className="text-[10px] text-emerald-600 font-bold mt-1 ml-1 flex items-center gap-1">
+                      <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                      {pincodeSuccess}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -1324,7 +1611,7 @@ Submitted via Elitetoolistic Exam Portal`
                   <input 
                     type="text" 
                     required
-                    placeholder="Pending Selection..."
+                    placeholder="City / District"
                     value={cityName}
                     onChange={(e) => setCityName(e.target.value)}
                     className={inputClass}
@@ -1515,19 +1802,32 @@ Submitted via Elitetoolistic Exam Portal`
             </div>
 
             {/* BOTTOM ACTIONS BAR */}
-            <div className="flex items-center justify-between pt-6 border-t border-slate-100">
-              <button 
-                type="button" 
-                onClick={() => setStep(1)} 
-                className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-slate-900 transition-all"
-              >
-                Go Back
-              </button>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-100">
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <button 
+                  type="button" 
+                  onClick={() => { setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center gap-2"
+                >
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                  </svg>
+                  Edit Step 1
+                </button>
+
+                <Link
+                  to="/login"
+                  id="admission-step2-back-login"
+                  className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all flex items-center gap-1.5"
+                >
+                  Back to Login
+                </Link>
+              </div>
 
               <button 
                 type="submit" 
                 disabled={loading}
-                className="bg-gradient-to-r from-primary-500 to-indigo-600 hover:from-primary-600 hover:to-indigo-700 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-95 flex items-center gap-2"
+                className="w-full sm:w-auto bg-gradient-to-r from-primary-500 to-indigo-600 hover:from-primary-600 hover:to-indigo-700 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
               >
                 Submit Application →
               </button>
@@ -1555,6 +1855,20 @@ Submitted via Elitetoolistic Exam Portal`
               <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block">
                 Ref ID: {submittedId}
               </span>
+            </div>
+
+            {/* Back to Login Button */}
+            <div className="pt-2">
+              <Link
+                to="/login"
+                id="admission-success-back-login"
+                className="w-full inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-black text-white font-black text-[11px] py-4 rounded-2xl uppercase tracking-[0.25em] transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95"
+              >
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                </svg>
+                <span>Back to Login</span>
+              </Link>
             </div>
           </div>
         )}
