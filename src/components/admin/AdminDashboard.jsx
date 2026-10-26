@@ -3,14 +3,19 @@ import supabase from '../../utils/supabase';
 import CreateUser from './CreateUser';
 import ManageQuestions from './ManageQuestions';
 import AdminAdmissions from './AdminAdmissions';
+import { useConfirm, useToast } from '../common/AlertProvider';
 
 const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh, initialTab }) => {
+  const toast = useToast();
+  const confirm = useConfirm();
   const isSuperAdmin = user?.email === 'kabirhaldar4444@gmail.com' || user?.email === 'support@elitetoolistic.com' || user?.email === 'info@elitetoolistic.com';
   const isStaffAdmin = user?.email === 'staffadmin@gmail.com';
   const [activeTab, setActiveTab] = useState(isStaffAdmin ? 'candidates' : (initialTab || 'exams'));
   const [newTitle, setNewTitle] = useState('');
   const [newDuration, setNewDuration] = useState('');
   const [selectedExam, setSelectedExam] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('default');
 
   const handleSubmitExam = async (e) => {
     e.preventDefault();
@@ -19,6 +24,48 @@ const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh, 
     setNewTitle('');
     setNewDuration('');
   };
+
+  const handleDeleteExam = async (exam) => {
+    let isConfirmed = false;
+    if (confirm) {
+      isConfirmed = await confirm({
+        title: 'Delete Exam',
+        message: `Are you sure you want to delete "${exam.title}"? All associated questions will also be removed. This cannot be undone.`,
+        type: 'error',
+        confirmText: 'Delete'
+      });
+    } else {
+      isConfirmed = window.confirm(`Are you sure you want to delete "${exam.title}"?`);
+    }
+
+    if (!isConfirmed) return;
+
+    try {
+      await deleteExam(exam.id);
+      if (toast) toast('Exam deleted successfully', 'success');
+    } catch (err) {
+      console.error('Delete exam error:', err);
+      if (toast) toast('Failed to delete exam', 'error');
+    }
+  };
+
+  const filteredExams = (exams || [])
+    .filter((exam) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      const titleMatch = (exam.title || '').toLowerCase().includes(q);
+      const durationMatch = (exam.duration || '').toString().includes(q) ||
+                            `${exam.duration} mins`.toLowerCase().includes(q) ||
+                            `${exam.duration} minutes`.toLowerCase().includes(q);
+      return titleMatch || durationMatch;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'title-asc') return (a.title || '').localeCompare(b.title || '');
+      if (sortBy === 'title-desc') return (b.title || '').localeCompare(a.title || '');
+      if (sortBy === 'duration-asc') return (Number(a.duration) || 0) - (Number(b.duration) || 0);
+      if (sortBy === 'duration-desc') return (Number(b.duration) || 0) - (Number(a.duration) || 0);
+      return 0;
+    });
 
   if (selectedExam) {
     return (
@@ -166,20 +213,117 @@ const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh, 
 
               {/* Grid Module */}
               <div className="exam-list">
-                <div className="flex justify-between items-end mb-6 border-b pb-4" style={{ borderColor: 'var(--glass-border)' }}>
-                  <h3 className="text-2xl font-black tracking-tight text-[color:var(--text-dark)]">All Exams</h3>
-                  <span className="text-sm font-bold bg-primary-500/10 text-primary-500 px-3 py-1 rounded-full border border-primary-500/20">{exams.length} Total</span>
+                {/* Search & Header Section */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b pb-5" style={{ borderColor: 'var(--glass-border)' }}>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-2xl font-black tracking-tight text-[color:var(--text-dark)]">All Exams</h3>
+                      <span className="text-sm font-bold bg-primary-500/10 text-primary-500 px-3.5 py-1 rounded-full border border-primary-500/20">
+                        {searchQuery.trim() ? `${filteredExams.length} of ${exams.length} Exams` : `${exams.length} Total`}
+                      </span>
+                    </div>
+                    {searchQuery.trim() && (
+                      <p className="text-xs font-semibold text-[color:var(--text-light)] mt-1.5 flex items-center gap-2">
+                        <span>Showing {filteredExams.length} matching {filteredExams.length === 1 ? 'exam' : 'exams'} for &ldquo;<span className="text-primary-500 font-bold">{searchQuery}</span>&rdquo;</span>
+                        <button
+                          type="button"
+                          onClick={() => setSearchQuery('')}
+                          className="text-primary-500 hover:text-primary-600 underline text-xs font-bold transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Search and Sort Toolbar */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                    {/* Search Input Box */}
+                    <div className="relative flex-1 sm:w-80">
+                      <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none text-[color:var(--text-light)]">
+                        <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <input 
+                        type="text"
+                        placeholder="Search exams by title or duration..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-10 py-3 rounded-2xl text-sm font-medium transition-all duration-300 outline-none focus:ring-2 focus:ring-primary-500/40 shadow-sm"
+                        style={{
+                          backgroundColor: 'var(--input-bg)',
+                          border: '1px solid var(--glass-border)',
+                          color: 'var(--text-dark)'
+                        }}
+                      />
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchQuery('')}
+                          className="absolute inset-y-0 right-3 flex items-center text-[color:var(--text-light)] hover:text-[color:var(--text-dark)] transition-colors p-1"
+                          title="Clear search"
+                        >
+                          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Sort Dropdown */}
+                    <div className="relative min-w-[170px]">
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="w-full py-3 px-3.5 rounded-2xl text-xs font-bold transition-all outline-none cursor-pointer appearance-none pr-9 border shadow-sm"
+                        style={{
+                          backgroundColor: 'var(--input-bg)',
+                          borderColor: 'var(--glass-border)',
+                          color: 'var(--text-dark)'
+                        }}
+                      >
+                        <option value="default">Sort: Default</option>
+                        <option value="title-asc">Title: A &rarr; Z</option>
+                        <option value="title-desc">Title: Z &rarr; A</option>
+                        <option value="duration-asc">Duration: Shortest First</option>
+                        <option value="duration-desc">Duration: Longest First</option>
+                      </select>
+                      <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-[color:var(--text-light)]">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {exams.length === 0 ? (
-                    <div className="col-span-full py-12 flex flex-col items-center justify-center border-2 border-dashed rounded-3xl" style={{ borderColor: 'var(--glass-border)' }}>
+                    <div className="col-span-full py-16 flex flex-col items-center justify-center border-2 border-dashed rounded-3xl" style={{ borderColor: 'var(--glass-border)' }}>
                       <svg className="text-slate-400 mb-4 opacity-50" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                      <p className="text-[color:var(--text-light)] font-bold">No exams created yet.</p>
-                      <p className="text-[color:var(--text-light)] opacity-70 text-sm">Create an exam above to see it listed here.</p>
+                      <p className="text-[color:var(--text-light)] font-bold text-lg">No exams created yet.</p>
+                      <p className="text-[color:var(--text-light)] opacity-70 text-sm mt-1">Create an exam above to see it listed here.</p>
+                    </div>
+                  ) : filteredExams.length === 0 ? (
+                    <div className="col-span-full py-16 flex flex-col items-center justify-center border-2 border-dashed rounded-3xl" style={{ borderColor: 'var(--glass-border)' }}>
+                      <div className="w-16 h-16 rounded-2xl bg-primary-500/10 text-primary-500 flex items-center justify-center mb-4">
+                        <svg width="30" height="30" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-[color:var(--text-dark)] font-bold text-lg">No exams match &ldquo;{searchQuery}&rdquo;</p>
+                      <p className="text-[color:var(--text-light)] opacity-70 text-sm mt-1 mb-5">Try checking the spelling or searching by duration.</p>
+                      <button 
+                        type="button" 
+                        onClick={() => setSearchQuery('')}
+                        className="px-6 py-2.5 rounded-full text-xs font-bold bg-primary-500/10 hover:bg-primary-500/20 text-primary-500 border border-primary-500/30 transition-all hover:scale-105 active:scale-95"
+                      >
+                        Clear Search Filter
+                      </button>
                     </div>
                   ) : (
-                    exams.map((exam, i) => (
+                    filteredExams.map((exam, i) => (
                       <div key={exam.id} className="glass-card-saas p-6 flex flex-col h-full hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 group" style={{ animationDelay: `${i * 50}ms` }}>
                         <div className="flex-1">
                           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white mb-4 shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
@@ -201,7 +345,7 @@ const AdminDashboard = ({ user, profile, exams, addExam, deleteExam, onRefresh, 
                             Manage Questions
                           </button>
                           <button 
-                            onClick={() => deleteExam(exam.id)} 
+                            onClick={() => handleDeleteExam(exam)} 
                             className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 text-xs font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-1 transition-all hover:scale-105 active:scale-95"
                           >
                             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
