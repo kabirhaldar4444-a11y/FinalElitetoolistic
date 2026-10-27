@@ -1524,13 +1524,16 @@ Submitted via Elitetoolistic Exam Portal`
                     </h4>
                     <div className="bg-white p-4 rounded-2xl border border-slate-100 text-slate-600 font-medium space-y-2 text-[11px] leading-relaxed shadow-sm">
                       <p>
-                        "My name is <strong>{fullName || '[Candidate Name]'}</strong> and my registered email address is <strong>{email || '[Candidate Email]'}</strong>. I voluntarily recorded this video statement to verify my profile, confirm my identity, and acknowledge my enrollment in Elite Toolistic's professional training program (available at elitetoolistic.com)."
+                        "My name is <strong>{fullName || '[Candidate Name]'}</strong>, and my registered email address is <strong>{email || '[Candidate Email]'}</strong>. I purposely recorded this video statement to verify my profile, confirm my identity, and acknowledge my enrollment in Elite Toolistic's professional training program (available at https://elitetoolistic.com/)."
                       </p>
                       <p>
-                        "I purchased this course for personal skill enhancement, professional development, and career growth. I fully accept and understand that Elite Toolistic is only an educational skills-based course training provider and never offers a job promise, job placement assurance, or particular career assurances upon course completion."
+                        "I purchased this service directly from the Elite Toolistic website after conducting a Google search; no third-party company or agency provided me with assistance or recommendations to take these services."
                       </p>
                       <p>
-                        "Furthermore, I certify that I will not file any chargebacks or complaints regarding this transaction in the future. I also promise not to share or distribute any copyrighted course materials supplied to me throughout this program. This statement is made freely, knowingly, and without pressure."
+                        "I am purchasing this course for personal skill enhancement, professional development, and career growth. I fully accept and understand that Elite Toolistic is only an educational skills-based course training provider and never offers a job promise, job placement assurance, or particular career assurances upon course completion."
+                      </p>
+                      <p>
+                        "Furthermore, I am aware and fully understand that the amount I paid to Elite Toolistic is non-refundable. I also certify that I am completely satisfied with the Elite Toolistic-provided support and services (support@elitetoolistic.com). I also promise not to share or distribute any copyrighted course materials supplied to me throughout this program. This statement is made freely, knowingly, and without pressure."
                       </p>
                     </div>
                   </div>
@@ -1543,13 +1546,16 @@ Submitted via Elitetoolistic Exam Portal`
                     </h4>
                     <div className="bg-white p-4 rounded-2xl border border-slate-100 text-slate-600 font-medium space-y-2 text-[11px] leading-relaxed shadow-sm">
                       <p>
-                        "मेरा नाम <strong>{fullName || '[Candidate Name]'}</strong> है और मेरा रजिस्टर्ड ईमेल एड्रेस <strong>{email || '[Candidate Email]'}</strong> है। मैंने अपनी प्रोफाइल को वेरीफाई करने, अपनी पहचान कन्फर्म करने और Elite Toolistic के प्रोफेशनल ट्रेनिंग प्रोग्राम (जो elitetoolistic.com पर उपलब्ध है) में अपने एनरोलमेंट को स्वीकार करने के लिए स्वेच्छा से यह वीडियो स्टेटमेंट रिकॉर्ड किया है।"
+                        "मेरा नाम <strong>{fullName || '[Candidate Name]'}</strong> है और मेरा रजिस्टर्ड ईमेल एड्रेस <strong>{email || '[Candidate Email]'}</strong> है। मैंने अपनी प्रोफाइल को वेरीफाई करने, अपनी पहचान कन्फर्म करने और Elite Toolistic के प्रोफेशनल ट्रेनिंग प्रोग्राम (जो https://elitetoolistic.com/ पर उपलब्ध है) में अपने एनरोलमेंट को स्वीकार करने के लिए यह वीडियो स्टेटमेंट रिकॉर्ड किया है।"
                       </p>
                       <p>
-                        "मैंने यह कोर्स अपनी पर्सनल स्किल्स को बेहतर बनाने, प्रोफेशनल डेवलपमेंट और करियर में आगे बढ़ने के लिए खरीदा है। मैं पूरी तरह से स्वीकार करता हूँ और समझता हूँ कि Elite Toolistic केवल एक एजुकेशनल स्किल-बेस्ड कोर्स ट्रेनिंग प्रोवाइडर है और कोर्स पूरा होने पर कभी भी नौकरी का वादा, नौकरी मिलने की गारंटी या किसी खास करियर की गारंटी नहीं देता है।"
+                        "मैंने यह सर्विस गूगल सर्च करने के बाद सीधे Elite Toolistic की वेबसाइट से खरीदी है; किसी भी थर्ड-पार्टी कंपनी या एजेंसी ने मुझे यह सर्विस लेने के लिए कोई सहायता या सिफारिश प्रदान नहीं की है।"
                       </p>
                       <p>
-                        "इसके अलावा, मैं यह सर्टिफाई करता हूँ कि मैं भविष्य में इस ट्रांजैक्शन के संबंध में कोई चार्जबैक या शिकायत नहीं करूँगा। मैं यह भी वादा करता हूँ कि इस प्रोग्राम के दौरान मुझे दिए गए किसी भी कॉपीराइटेड कोर्स मटेरियल को शेयर या डिस्ट्रीब्यूट नहीं करूँगा। यह स्टेटमेंट बिना किसी दबाव के, पूरी जानकारी के साथ और अपनी मर्जी से दिया जा रहा है।"
+                        "मैं यह कोर्स अपनी पर्सनल स्किल्स को बेहतर बनाने, प्रोफेशनल डेवलपमेंट और करियर ग्रोथ के लिए खरीद रहा हूँ। मैं पूरी तरह से स्वीकार करता हूँ और समझता हूँ कि Elite Toolistic केवल एक एजुकेशनल स्किल-बेस्ड कोर्स ट्रेनिंग प्रोवाइडर है और कोर्स पूरा होने पर कभी भी नौकरी का वादा, नौकरी मिलने की गारंटी या किसी खास करियर की गारंटी नहीं देता है।"
+                      </p>
+                      <p>
+                        "इसके अलावा, मैं पूरी तरह से समझता हूँ और जानता हूँ कि Elite Toolistic को मेरे द्वारा भुगतान की गई राशि नॉन-रिफंडेबल (non-refundable) है। मैं यह भी प्रमाणित करता हूँ कि मैं Elite Toolistic द्वारा प्रदान की गई सहायता और सेवाओं (support@elitetoolistic.com) से पूरी तरह संतुष्ट हूँ। मैं यह भी वादा करता हूँ कि इस प्रोग्राम के दौरान मुझे दी गई किसी भी कॉपीराइटेड कोर्स सामग्री को साझा या वितरित नहीं करूँगा। यह स्टेटमेंट बिना किसी दबाव के, पूरी जानकारी के साथ और अपनी मर्जी से दिया जा रहा है।"
                       </p>
                     </div>
                   </div>
