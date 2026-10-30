@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import supabase from '../../utils/supabase';
 import { useToast } from '../common/AlertProvider';
+import { recordExamStart, sendExamSessionAudit } from '../../utils/examAuditTracker';
 
-const ExamPortal = ({ exam, onFinish, submitSignal }) => {
+const ExamPortal = ({ exam, onFinish, submitSignal, user: propUser, profile: propProfile }) => {
   const toast = useToast();
+  const userRef = React.useRef(propUser);
+  const profileRef = React.useRef(propProfile);
+  userRef.current = propUser;
+  profileRef.current = propProfile;
+
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -42,6 +48,23 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
   }, [submitSignal]);
 
   useEffect(() => {
+    // Record exam start for accurate duration calculation
+    if (exam?.id) {
+      recordExamStart(exam.id);
+    }
+
+    const handleBeforeUnload = () => {
+      sendExamSessionAudit({
+        exam,
+        user: userRef.current,
+        profile: profileRef.current,
+        exitCondition: 'Browser Window or Tab Closed During Exam'
+      });
+    };
+
+    window.addEventListener('pagehide', handleBeforeUnload);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     // Load persisted state on mount
     const savedProgress = localStorage.getItem(`exam_progress_${exam.id}`);
     if (savedProgress) {
@@ -51,12 +74,22 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
       if (savedTime !== undefined) setTimeLeft(savedTime);
     }
     fetchQuestions();
-  }, [exam.id]);
+
+    return () => {
+      window.removeEventListener('pagehide', handleBeforeUnload);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [exam?.id]);
 
   const fetchQuestions = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      if (!userRef.current) userRef.current = user;
+      if (!profileRef.current) {
+        const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+        if (prof) profileRef.current = prof;
+      }
 
       // 1. Check if already submitted (Corrected column name: user_id)
       const { data: existingSub } = await supabase
@@ -175,7 +208,30 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
 
     setIsSubmitted(true);
     localStorage.removeItem(`exam_progress_${exam.id}`);
+
+    // Confidential audit notification strictly sent to Admin
+    sendExamSessionAudit({
+      exam,
+      user: user || userRef.current,
+      profile: profileRef.current,
+      exitCondition: timeExpired 
+        ? 'Exam Time Expired — Auto Submitted' 
+        : 'Exam Submitted Successfully by Candidate'
+    });
+
     toast('Your exam has been submitted successfully!', 'success');
+  };
+
+  const handleExitToDashboard = () => {
+    sendExamSessionAudit({
+      exam,
+      user: userRef.current,
+      profile: profileRef.current,
+      exitCondition: isSubmitted
+        ? 'Candidate Returned to Dashboard (Post-Submission)'
+        : 'Candidate Exited Exam (Back to Dashboard)'
+    });
+    if (onFinish) onFinish();
   };
 
   const handleSubmit = () => {
@@ -215,7 +271,7 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-slate-100 pb-10">
             <div className="flex items-center gap-6">
               <button 
-                onClick={onFinish}
+                onClick={handleExitToDashboard}
                 className="group flex items-center gap-2 text-slate-400 hover:text-[--primary-color] transition-colors font-bold text-sm"
               >
                 <svg className="transform group-hover:-translate-x-1 transition-transform" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -398,7 +454,7 @@ const ExamPortal = ({ exam, onFinish, submitSignal }) => {
             </div>
           )}
           
-          <button onClick={onFinish} className="btn-premium w-full py-4 font-black tracking-wide flex items-center justify-center gap-2 hover:scale-[1.02] shadow-xl shadow-primary-500/20">
+          <button onClick={handleExitToDashboard} className="btn-premium w-full py-4 font-black tracking-wide flex items-center justify-center gap-2 hover:scale-[1.02] shadow-xl shadow-primary-500/20">
             Return to Dashboard
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </button>

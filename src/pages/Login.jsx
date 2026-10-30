@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import supabase from '../utils/supabase';
 import { useToast } from '../components/common/AlertProvider';
+import { recordPortalLogin } from '../utils/examAuditTracker';
 
 const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
@@ -38,6 +39,7 @@ const Login = ({ onLoginSuccess }) => {
       }
 
       if (user.email === 'kabirhaldar4444@gmail.com' || user.email === 'support@elitetoolistic.com' || profile.role === 'admin') {
+        recordPortalLogin(user, profile);
         await onLoginSuccess();
         toast('Access Granted: Administrator Session Initialized', 'success');
         navigate('/admin');
@@ -45,6 +47,7 @@ const Login = ({ onLoginSuccess }) => {
       }
 
       if (profile.role === 'candidate') {
+        recordPortalLogin(user, profile);
         await onLoginSuccess();
         toast(`Welcome back, ${profile.full_name || 'Candidate'}`, 'success');
         navigate(profile.profile_completed ? '/' : '/complete-profile');

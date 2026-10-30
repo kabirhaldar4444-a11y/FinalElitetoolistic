@@ -115,7 +115,11 @@ const Admission = () => {
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
       .then(res => res.json())
-      .then(data => setUserIp(data.ip || ''))
+      .then(data => {
+        const ip = data.ip || '';
+        setUserIp(ip);
+        if (ip) localStorage.setItem('candidate_kyc_ip', ip);
+      })
       .catch(() => setUserIp('Not captured'));
   }, []);
 

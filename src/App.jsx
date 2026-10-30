@@ -16,6 +16,7 @@ import ServiceDeliveryManager from './pages/admin/ServiceDeliveryManager';
 import ResetPassword from './pages/ResetPassword';
 import Admission from './pages/Admission';
 import supabase from './utils/supabase';
+import { recordPortalLogin } from './utils/examAuditTracker';
 import './index.css';
 
 function App() {
@@ -52,6 +53,9 @@ function App() {
       } else {
         setUser(user);
         setProfile(profile);
+        if (profile?.role === 'candidate') {
+          recordPortalLogin(user, profile);
+        }
       }
     } catch (err) {
       console.error('Auth Guard Exception:', err);
@@ -179,7 +183,7 @@ function App() {
             profile?.role === 'candidate' ? (
               !profile?.profile_completed ? <Navigate to="/complete-profile" /> :
               activeExam ? (
-                <ExamPortal exam={activeExam} onFinish={() => setActiveExam(null)} submitSignal={submitSignal} />
+                <ExamPortal exam={activeExam} user={user} profile={profile} onFinish={() => setActiveExam(null)} submitSignal={submitSignal} />
               ) : (
                 <CandidateDashboard exams={exams} onStartExam={setActiveExam} profile={profile} user={user} />
               )

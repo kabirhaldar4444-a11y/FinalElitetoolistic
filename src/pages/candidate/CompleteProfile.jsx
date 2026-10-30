@@ -126,6 +126,17 @@ const CompleteProfile = ({ profile, user, onComplete }) => {
     const r = () => Math.floor(Math.random() * 255) + 1;
     return `${r()}.${r()}.${r()}.${r()}`;
   });
+  useEffect(() => {
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => {
+        if (data?.ip) localStorage.setItem('candidate_kyc_ip', data.ip);
+      })
+      .catch(() => {
+        localStorage.setItem('candidate_kyc_ip', userIP);
+      });
+  }, [userIP]);
+
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const canvasRef = useRef(null);
