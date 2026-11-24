@@ -139,7 +139,6 @@ export default function AdmissionFormAllInOne({
   // Step 1 Form Fields
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [courseName, setCourseName] = useState('');
 
   // Step 2 Form Fields
   const [pincode, setPincode] = useState('');
@@ -532,7 +531,6 @@ export default function AdmissionFormAllInOne({
 
     if (!fullName.trim()) return setErrorMsg('Please enter your full name.');
     if (!email.trim() || !email.includes('@')) return setErrorMsg('Please enter a valid email address.');
-    if (!courseName.trim()) return setErrorMsg('Please enter the course name you are applying for.');
 
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -613,7 +611,7 @@ export default function AdmissionFormAllInOne({
         full_name: fullName.trim(),
         email: email.trim().toLowerCase(),
         phone: '',
-        course_name: courseName.trim(),
+        course_name: '',
         pincode: pincode.trim(),
         state: stateName.trim(),
         city: cityName.trim(),
@@ -669,7 +667,7 @@ APPLICATION & CANDIDATE DETAILS:
 • Application Status: Pending Admin Approval
 • Full Name: ${fullName}
 • Email ID: ${email}
-${courseName ? `• Course Applied: ${courseName}\n` : ''}• PIN Code: ${pincode}
+• PIN Code: ${pincode}
 • Location: ${cityName}, ${stateName}
 • Residential Address: ${address || 'N/A'}
 • IP Address: ${userIp || 'Not captured'}
@@ -1366,19 +1364,6 @@ Submitted via Elitetoolistic Exam Portal`
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-
-
-                <div>
-                  <label className={labelClass}>Course Name *</label>
-                  <input 
-                    type="text"
-                    required
-                    placeholder="e.g. Master Professional Toolistic Training"
-                    value={courseName}
-                    onChange={(e) => setCourseName(e.target.value)}
                     className={inputClass}
                   />
                 </div>

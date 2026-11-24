@@ -71,7 +71,6 @@ const Admission = () => {
   // Step 1 Form Data
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [courseName, setCourseName] = useState('');
 
   // Step 2 Form Data
   const [pincode, setPincode] = useState('');
@@ -469,7 +468,6 @@ const Admission = () => {
 
     if (!fullName.trim()) return setErrorMsg('Please enter your full name.');
     if (!email.trim() || !email.includes('@')) return setErrorMsg('Please enter a valid email address.');
-    if (!courseName.trim()) return setErrorMsg('Please enter the course name you are applying for.');
 
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -550,7 +548,7 @@ const Admission = () => {
         full_name: fullName.trim(),
         email: email.trim().toLowerCase(),
         phone: '',
-        course_name: courseName.trim(),
+        course_name: '',
         pincode: pincode.trim(),
         state: stateName.trim(),
         city: cityName.trim(),
@@ -599,7 +597,7 @@ APPLICATION & CANDIDATE DETAILS:
 • Application Status: Pending Admin Approval
 • Full Name: ${fullName}
 • Email ID: ${email}
-${courseName ? `• Course Applied: ${courseName}\n` : ''}• PIN Code: ${pincode}
+• PIN Code: ${pincode}
 • Location: ${cityName}, ${stateName}
 • Residential Address: ${address || 'N/A'}
 • IP Address: ${userIp || 'Not captured'}
@@ -1319,20 +1317,6 @@ Submitted via Elitetoolistic Exam Portal`
                 placeholder="Enter your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-              />
-            </div>
-
-
-            {/* Course Name */}
-            <div>
-              <label className={labelClass}>Course Name *</label>
-              <input 
-                type="text" 
-                required
-                placeholder="Enter the course you're applying for"
-                value={courseName}
-                onChange={(e) => setCourseName(e.target.value)}
                 className={inputClass}
               />
             </div>
