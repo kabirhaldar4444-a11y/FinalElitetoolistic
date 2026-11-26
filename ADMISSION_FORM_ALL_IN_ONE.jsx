@@ -1224,8 +1224,6 @@ ACCEPTED BY CANDIDATE: YES ✓
 SUPPORTING EVIDENCE:
 ---------------------
 • IP Address: ${userIp || 'Not captured'}
-• Candidate Profile Photo:
-${photoUrl || 'N/A'}
 • Live Video Statement:
 ${videoUrl || 'N/A'}
 • Aadhaar Card (Front):
